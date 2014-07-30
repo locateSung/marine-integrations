@@ -54,7 +54,7 @@ class DataParticleType(BaseEnum):
     """
     RAW = CommonDataParticleType.RAW
     CAMDS_RESPONSE = "camds_response"
-    CAMDS_VIDEO_BINARY = "camds_video_binary"
+    CAMDS_VIDEO = "camds_video"
     CAMDS_HEALTH_STATUS = "camds_health_status"
     CAMDS_DISK_STATUS = "camds_disc_status"
 
