@@ -60,7 +60,7 @@ class DataParticleType(BaseEnum):
 
 # keys for video stream
 class CAMDS_VIDEO_KEY(BaseEnum):
-    CAMDS_VIDEO_BINARY = "camds_video_binary"
+    CAMDS_VIDEO_BINARY = "raw"
 
 # Data particle for PT4 command
 class CAMDS_VIDEO(DataParticle):
