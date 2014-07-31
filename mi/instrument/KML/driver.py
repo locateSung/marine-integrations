@@ -318,6 +318,7 @@ class KMLParameter(DriverParameter):
 
     # Engineering parameters for the scheduled commands
     SAMPLE_INTERVAL = (None, None, None, None, '00:00:00', 'Sample Interval', 'hh:mm:ss, 00:00:00 will turn off the schedule')
+    ACQUIRE_STATUS_INTERVAL = (None, None, None, None, '00:00:00', 'Acquire Status Interval', 'hh:mm:ss, 00:00:00 will turn off the schedule')
     VIDEO_FORWARDING = (None, None, None, None, False, 'Video Forwarding Flag',
                         'True - Turn on Video, False - Turn off video')
     VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video_forwarding_timeout',
@@ -445,6 +446,9 @@ class KMLCapability(BaseEnum):
 
 class KMLScheduledJob(BaseEnum):
     SNAPSHOT = 'snapshot'
+    VIDEO_FORWARDING = "video forwarding"
+    STATUS = "status"
+
 
 
 class KMLInstrumentDriver(SingleConnectionInstrumentDriver):
@@ -760,11 +764,11 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             cmds = self._get_params()
             results = ""
             for attr in sorted(cmds):
-                if attr not in ['dict', 'has', 'list', 'ALL', 'GET_STATUS_INTERVAL', 'CLOCK_SYNCH_INTERVAL']:
-                    if not attr.startswith("_"):
-                        key = self._getattr_key(attr)
-                        result = self._do_cmd_resp(KMLInstrumentCmds.GET, key, **kwargs)
-                        results += result + NEWLINE
+                #if attr not in ['dict', 'has', 'list','GET_STATUS_INTERVAL', 'CLOCK_SYNCH_INTERVAL']:
+                if attr not in [ KMLParameter.SAMPLE_INTERVAL,KMLParameter.VIDEO_FORWARDING_TIMEOUT, KMLParameter.ACQUIRE_STATUS_INTERVAL]:
+                    key = self._getattr_key(attr)
+                    result = self._do_cmd_resp(KMLInstrumentCmds.GET, key, **kwargs)
+                    results += result + NEWLINE
 
         # Catch all error so we can put ourselves back into
         # streaming.  Then rethrow the error
@@ -1347,7 +1351,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         return response
 
     def _get_params(self):
-        return dir(KMLParameter)
+        #return dir(KMLParameter)
+        return KMLParameter.list()
 
     def _getattr_key(self, attr):
         return getattr(KMLParameter, attr)

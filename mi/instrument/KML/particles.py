@@ -30,8 +30,8 @@ from mi.core.instrument.data_particle import CommonDataParticleType
 CAMDS_RESPONSE = r'.*\n<::>'
 CAMDS_RESPONSE_MATCHER = re.compile(CAMDS_RESPONSE,re.DOTALL)
 
-CAMDS_VIDEO = r'.{500}'
-CAMDS_VIDEO_MATCH = re.compile(CAMDS_VIDEO, re.DOTALL)
+# CAMDS_VIDEO = r'.{500}'
+# CAMDS_VIDEO_MATCH = re.compile(CAMDS_VIDEO, re.DOTALL)
 
 # ADCP_PD0_PARSED_REGEX = r'\x7f\x7f(..)'  # .*
 # ADCP_PD0_PARSED_REGEX_MATCHER = re.compile(ADCP_PD0_PARSED_REGEX, re.DOTALL)
@@ -64,7 +64,7 @@ class CAMDS_VIDEO_KEY(BaseEnum):
 
 # Data particle for PT4 command
 class CAMDS_VIDEO(DataParticle):
-    _data_particle_type = DataParticleType.CAMDS_VIDEO_BINARY
+    _data_particle_type = DataParticleType.CAMDS_VIDEO
 
     def _build_parsed_values(self):
 

@@ -29,8 +29,6 @@ from mi.core.instrument.port_agent_client import PortAgentClient
 from mi.instrument.KML.particles import CAMDS_VIDEO, DataParticleType
 from mi.core.instrument.data_particle import RawDataParticle
 
-CAMDS_VIDEO
-
 from mi.core.log import get_logger
 
 log = get_logger()
@@ -68,7 +66,7 @@ class CAMDSConnections(BaseEnum):
 class StreamPortAgentClient(PortAgentClient):
     def __init__(self, host, port, cmd_port, delim=None):
         PortAgentClient.__init__(self, host, port, cmd_port, delim=None)
-        self.info = "This is portAgentClient for VIDEO"
+        self.info = "This is portAgentClient for Video Stream"
 
 class CAMDSInstrumentDriver(KMLInstrumentDriver):
     """
@@ -308,6 +306,15 @@ class CAMDSProtocol(KMLProtocol):
         @returns a list of chunks identified, if any.
         The chunks are all the same type.
         """
+
+    @staticmethod
+    def sieve_function_stream(raw_data):
+        """
+        Chunker sieve method to help the chunker identify chunks.
+        @returns a list of chunks identified, if any.
+        The chunks are all the same type.
+        """
+
     def __init__(self, prompts, newline, driver_event):
         """
         Protocol constructor.
@@ -338,7 +345,7 @@ class CAMDSProtocol(KMLProtocol):
         # The parameter, comamnd, and driver dictionaries.
         # self._param_dict2 = ProtocolParameterDict()
         # self._build_param_dict2()
-        self._chunker_stream = StringChunker(KMLProtocol.sieve_function)
+        self._chunker_stream = StringChunker(KMLProtocol.sieve_function_stream)
 
 
     def _build_command_dict(self):
@@ -476,11 +483,11 @@ class CAMDSProtocol(KMLProtocol):
     def _has_parameter(self, param):
         return KMLParameter.has(param)
 
-    def _send_break_cmd(self, delay):
-        """
-        Send a BREAK to attempt to wake the device.
-        """
-        self._connection.send_break(delay)
+    # def _send_break_cmd(self, delay):
+    #     """
+    #     Send a BREAK to attempt to wake the device.
+    #     """
+    #     self._connection.send_break(delay)
 
 class Prompt(KMLPrompt):
     """
