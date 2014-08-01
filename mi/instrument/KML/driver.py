@@ -1122,18 +1122,25 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                                            params[KMLParameter.SAMPLE_INTERVAL])
                 changed = True
 
-        if KMLParameter.AUTOSAMPLE_INTERVAL in params:
-            if (params[KMLParameter.AUTOSAMPLE_INTERVAL] != self._param_dict.get(
-                    KMLParameter.AUTOSAMPLE_INTERVAL)):
-                self._param_dict.set_value(KMLParameter.AUTOSAMPLE_INTERVAL,
-                                           params[KMLParameter.AUTOSAMPLE_INTERVAL])
+        if KMLParameter.ACQUIRE_STATUS_INTERVAL in params:
+            if (params[KMLParameter.ACQUIRE_STATUS_INTERVAL] != self._param_dict.get(
+                    KMLParameter.ACQUIRE_STATUS_INTERVAL)):
+                self._param_dict.set_value(KMLParameter.ACQUIRE_STATUS_INTERVAL,
+                                           params[KMLParameter.ACQUIRE_STATUS_INTERVAL])
                 changed = True
 
-        if KMLParameter.AUTOSAMPLE_FLAG in params:
-            if (params[KMLParameter.AUTOSAMPLE_FLAG] != self._param_dict.get(
-                    KMLParameter.AUTOSAMPLE_FLAG)):
-                self._param_dict.set_value(KMLParameter.AUTOSAMPLE_FLAG,
-                                           params[KMLParameter.AUTOSAMPLE_FLAG])
+        if KMLParameter.VIDEO_FORWARDING_TIMEOUT in params:
+            if (params[KMLParameter.VIDEO_FORWARDING_TIMEOUT] != self._param_dict.get(
+                    KMLParameter.VIDEO_FORWARDING_TIMEOUT)):
+                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                                           params[KMLParameter.VIDEO_FORWARDING_TIMEOUT])
+                changed = True
+
+        if KMLParameter.VIDEO_FORWARDING in params:
+            if (params[KMLParameter.VIDEO_FORWARDING] != self._param_dict.get(
+                    KMLParameter.VIDEO_FORWARDING)):
+                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING,
+                                           params[KMLParameter.VIDEO_FORWARDING])
                 changed = True
 
         if changed:
@@ -1324,7 +1331,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         """
         kwargs['expected_prompt'] = KMLPrompt.COMMAND
         # try:
-        #     self.get_param = param
+        self.get_param = param
         #     get_cmd = param + '?' + NEWLINE
         # except KeyError:
         #     raise InstrumentParameterException('Unknown driver parameter.. %s' % param)
