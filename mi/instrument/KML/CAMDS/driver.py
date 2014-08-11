@@ -586,6 +586,17 @@ class Protocol(CAMDSProtocol):
                              visibility=ParameterDictVisibility.READ_ONLY,
                              default_value=Parameter.NTP_SETTING[KMLParameter.DEFAULT_DATA])
 
+        self._param_dict.add(Parameter.NETWORK_DRIVE_LOCATION,
+                             r'CF = (\d+) \-+ Flow Ctrl ',
+                             lambda match: str(match.group(1)),
+                             str,
+                             type=ParameterDictType.STRING,
+                             display_name=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DESCRIPTION],
+                             startup_param=True,
+                             direct_access=False,
+                             default_value=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DEFAULT_DATA])
+
         self._param_dict.add(Parameter.WHEN_DISK_IS_FULL,
                              r'CF = (\d+) \-+ Flow Ctrl ',
                              lambda match: str(match.group(1)),
@@ -697,27 +708,27 @@ class Protocol(CAMDSProtocol):
                              startup_param=True,
                              default_value=Parameter.ZOOM_SPEED[KMLParameter.DEFAULT_DATA])
 
-        self._param_dict.add(Parameter.IRIS,
+        self._param_dict.add(Parameter.IRIS_POSITION,
                              r'EB = ([+-]\d+) \-+ Heading Bias',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.IRIS[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.IRIS[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.IRIS_POSITION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.IRIS_POSITION[KMLParameter.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.IRIS[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.IRIS_POSITION[KMLParameter.DEFAULT_DATA])
 
-        self._param_dict.add(Parameter.ZOOM_TO_GO,
+        self._param_dict.add(Parameter.ZOOM_POSITION,
                              r'EB = ([+-]\d+) \-+ Heading Bias',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.ZOOM_TO_GO[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.ZOOM_TO_GO[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.ZOOM_POSITION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.ZOOM_POSITION[KMLParameter.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.ZOOM_TO_GO[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.ZOOM_POSITION[KMLParameter.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.PAN_SPEED,
                              r'EB = ([+-]\d+) \-+ Heading Bias',
@@ -741,38 +752,38 @@ class Protocol(CAMDSProtocol):
                              direct_access=True,
                              default_value=Parameter.TILT_SPEED[KMLParameter.DEFAULT_DATA])
 
-        self._param_dict.add(Parameter.ENABLE_SOFT_END,
+        self._param_dict.add(Parameter.SOFT_END_STOPS,
                              r'ED = (\d+) \-+ Transducer Depth ',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.ENABLE_SOFT_END[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.ENABLE_SOFT_END[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.SOFT_END_STOPS[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.SOFT_END_STOPS[KMLParameter.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.ENABLE_SOFT_END[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.SOFT_END_STOPS[KMLParameter.DEFAULT_DATA])
 
-        self._param_dict.add(Parameter.PAN_LOCATION,
+        self._param_dict.add(Parameter.PAN_POSITION,
                              r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.PAN_LOCATION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.PAN_LOCATION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.PAN_POSITION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.PAN_POSITION[KMLParameter.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.PAN_LOCATION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.PAN_POSITION[KMLParameter.DEFAULT_DATA])
 
-        self._param_dict.add(Parameter.TILT_LOCATION,
+        self._param_dict.add(Parameter.TILT_POSITION,
                              r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.TILT_LOCATION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.TILT_LOCATION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.TILT_POSITION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.TILT_POSITION[KMLParameter.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.TILT_LOCATION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.TILT_POSITION[KMLParameter.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.SAMPLE_INTERVAL,
                              r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
@@ -784,6 +795,18 @@ class Protocol(CAMDSProtocol):
                              startup_param=True,
                              direct_access=False,
                              default_value=Parameter.SAMPLE_INTERVAL[KMLParameter.DEFAULT_DATA])
+
+        self._param_dict.add(Parameter.ACQUIRE_STATUS_INTERVAL,
+                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             lambda match: int(match.group(1)),
+                             str,
+                             type=ParameterDictType.STRING,
+                             display_name=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DESCRIPTION],
+                             startup_param=True,
+                             direct_access=False,
+                             default_value=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DEFAULT_DATA])
+
 
         self._param_dict.add(Parameter.VIDEO_FORWARDING,
                              r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
@@ -807,6 +830,32 @@ class Protocol(CAMDSProtocol):
                              direct_access=False,
                              default_value=Parameter.VIDEO_FORWARDING_TIMEOUT[KMLParameter.DEFAULT_DATA])
 
+        self._param_dict.add(Parameter.PRESET_NUMBER,
+                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             lambda match: int(match.group(1)),
+                             str,
+                             type=ParameterDictType.STRING,
+                             display_name=Parameter.PRESET_NUMBER[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.PRESET_NUMBER[KMLParameter.DESCRIPTION],
+                             startup_param=True,
+                             direct_access=False,
+                             default_value=Parameter.PRESET_NUMBER[KMLParameter.DEFAULT_DATA])
+
+        self._param_dict.add(Parameter.AUTO_CAPTURE_DURATION,
+                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             lambda match: int(match.group(1)),
+                             str,
+                             type=ParameterDictType.STRING,
+                             display_name=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DISPLAY_NAME],
+                             value_description=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DESCRIPTION],
+                             startup_param=True,
+                             direct_access=False,
+                             default_value=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DEFAULT_DATA])
+
+
         self._param_dict.set_default(Parameter.SAMPLE_INTERVAL)
+        self._param_dict.set_default(Parameter.ACQUIRE_STATUS_INTERVAL)
         self._param_dict.set_default(Parameter.VIDEO_FORWARDING)
         self._param_dict.set_default(Parameter.VIDEO_FORWARDING_TIMEOUT)
+        self._param_dict.set_default(Parameter.PRESET_NUMBER)
+        self._param_dict.set_default(Parameter.AUTO_CAPTURE_DURATION)
