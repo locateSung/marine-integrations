@@ -77,23 +77,37 @@ class KMLParameter(DriverParameter):
     # set-able parameters
     #
     """
-    Byte1 = Interval in seconds
+    set <\x16:NT:\x05\x00\x00157.237.237.104\x00>
+    Byte1 = Interval in second (5 seconds)
     Byte2 & 3 = 16 bit Integer Port Nr (if 0 use default port 123)
     Byte 4 to end = Server name in ASCII with \ 0 end of string
-    Default is ??? ReadOnly
+    Default is 5 seconds, 0 for port #123, server name = 157.237.237.104,  ReadOnly
 
-    get <0x03:GN:>
+    get <\x03:GN:>
     GN + Variable number of bytes.
     Byte1 = Interval in seconds
     Byte2 & 3 = 16 bit Integer Port Nr
     Byte 4 to end = Server name in ASCII with \0 end of string
 
     """
-    NTP_SETTING =('NT', '<0x03:GN:>', 1, None, '0x05 0x00 0x00 157.237.237.104\0', 'NTP Settings',
+    NTP_SETTING =('NT', '<\x03:GN:>', 1, None, '\x05\x00\x00157.237.237.104\x00', 'NTP Setting',
                   'interval(in second), NTP port, NTP Server name' )
 
     """
-    1 byte with value 0x1 or 0x2
+    set <\x04:CL:\x00>
+    variable number of bytes representing \0 terminated ASCII string.
+    (\0 only) indicates files are saved in the default location on the camera
+
+    get <\x03:FL:>
+    Byte1 to end = Network location as an ASCII string with \0 end of string. Send only \0 character to set default
+    """
+    NETWORK_DRIVE_LOCATION = ('CL','<\x04:CL:\x00>', 1, None, '\x00',
+                              'Network Drive Location','\x00 for local default location' )
+
+
+    """
+    set <\x04:RM:\x01>
+    1 byte with value \x01 or \x02
     0x1 = Replace oldest image on the disk
     0x2 = return NAK (or stop capture) when disk is full.
     Default is 0x1 and it is ReadOnly :set <0x04:RM:0x01>
@@ -102,11 +116,13 @@ class KMLParameter(DriverParameter):
     GM + 1 byte with value 0x1 or 0x2 0x1 = Replace oldest image on the disk
     0x2 = return NAK (or stop capture) when disk is full.
     """
-    WHEN_DISK_IS_FULL = ('RM', '<0x03:GM:>', 1, 1, 0x01, 'When Disk Is Full',
+    WHEN_DISK_IS_FULL = ('RM', '<\x03:GM:>', 1, 1, '\x01', 'When Disk Is Full',
                          '0x1 = Replace oldest image on the disk, 0x2 = return ERROR when disk is full')
 
     """
     Camera Mode
+
+    set <\x04:SV:\x09>
     1 byte:
     0x00 = None (off)
     0x09 = Stream
@@ -122,10 +138,11 @@ class KMLParameter(DriverParameter):
     0x0B = Area of Interest
     """
 
-    CAMERA_MODE = ('SV', '<0x03:GV:>', 1, 1, 0x09, 'Camera Mode',
+    CAMERA_MODE = ('SV', '<\x03:GV:>', 1, 1, '\x09', 'Camera Mode',
                    '0x00 = None (off) 0x09 = Stream 0x0A = Framing 0x0B = Focus')
 
     """
+    set <\x04:FR:\x1E>
     1 Byte with value between 1 and 30. If the requested frame rate cannot be achieved, the maximum rate will be used
     Default is 0x1E : set <0x04:FR:0x1E>
 
@@ -133,9 +150,10 @@ class KMLParameter(DriverParameter):
     GR + 1 Byte with value between 1 and 30.
     If the requested frame rate cannot be achieved, the maximum rate will be used.
     """
-    FRAME_RATE = ('FR' '<0x03:GR:>', 1, 1, 0x1E, 'Frame Rate', 'From 1 to 30 frames/second')
+    FRAME_RATE = ('FR' '<\x03:GR:>', 1, 1, '\x1E', 'Frame Rate', 'From 1 to 30 frames/second')
 
     """
+    set <\x04:SD:\x01>
     1 Byte with a dividing value of 0x1, 0x2, 0x4 and 0x8.
     0x1 = Full resolution
     0x2 = ½ Full resolution etc
@@ -144,10 +162,11 @@ class KMLParameter(DriverParameter):
     get <0x03:GD:>
     GD + 1 Byte with a dividing value of 0x1, 0x2, 0x4 and 0x8.
     """
-    IMAGE_RESOLUTION = ('<0x04:SD:0x01>', '<0x03:GD:>', 1, 1, 0x01,
+    IMAGE_RESOLUTION = ('SD', '<\x03:GD:>', 1, 1, '\x01',
                         'Image Resolution','0x1 = Full resolution, 0x2 = half Full resolution')
 
     """
+    set <\x04:CD:\x64>
     1 Byte with value between 0x01 and 0x64. (decimal 1 - 100)
     0x64 = Minimum data loss
     0x01 = Maximum data loss
@@ -156,10 +175,11 @@ class KMLParameter(DriverParameter):
     get <0x03:GI:>
     GI + 1 Byte with value between 0x01 and 0x64. (decimal 1 - 100) 0x64 = Minimum data loss 0x01 = Maximum data loss
     """
-    COMPRESSION_RATIO = ('CD', '<0x03:GI:>',1, 1, 0x64, 'Compression Ratio',
+    COMPRESSION_RATIO = ('CD', '<\x03:GI:>',1, 1, '\x64', 'Compression Ratio',
                          '0x64 = Minimum data loss, 0x01 = Maximum data loss')
 
     """
+    set <\x05:ET:\xFF\xFF>
     2 bytes.
     Byte1 = Value (starting value)
     Byte2 = Exponent (Number of zeros to add)
@@ -172,21 +192,23 @@ class KMLParameter(DriverParameter):
     e.g.. If Byte1 = 25 and byte2 = 3 then exposure time will be 25000 Max value allowed is 60000000 microseconds
     (if both bytes are set to 0xFF, the camera is in auto shutter mode)
     """
-    SHUTTER_SPEED = ('ET', '<0x03:EG:>', 1, 2, 0xFF, 'Shutter Speed',
+    SHUTTER_SPEED = ('ET', '<\x03:EG:>', 1, 2, '\xFF\xFF', 'Shutter Speed',
                      'Byte1 = Value (starting value), Byte2 = Exponent (Number of zeros to add)')
 
     """
+    get <\x04:GS:\xFF>
     byte Value 0x01 to 0x20 sets a static value and 0xFF sets auto gain.
     In automatic gain control, the camera will attempt to adjust the gain to give the optimal exposure.
-    Default is 0xFF : set <0x04:GS:0xFF>
+    Default is 0xFF : set <\x04:GS:\xFF>
 
     get <0x03:GG:>
     GG + 1 byte
     Value 0x01 to 0x20 for a static value and 0xFF for auto GAIN
     """
-    CAMERA_GAIN = ('GS', '<0x03:GG:>',1,1, 0xFF, 'Camera Gain','From 0x01 to 0x20 and 0xFF sets auto gain')
+    CAMERA_GAIN = ('GS', '<\x03:GG:>',1,1, '\xFF', 'Camera Gain','From 0x01 to 0x20 and 0xFF sets auto gain')
 
     """
+    set <\x05:BF:\x03\x32>
     Byte 1 is lamp to control: 0x01 = Lamp1 0x02 = Lamp2 0x03 = Both Lamps
     Byte 2 is brightness between 0x00 and 0x64
     Default is 0x03 0x32
@@ -196,48 +218,53 @@ class KMLParameter(DriverParameter):
     1st byte for lamp 1
     2nd byte for lamp 2. For each lamp, MSB indicates On/Off
     """
-    LAMP_BRIGHTNESS = ('BF', '<0x03:PF:>', 1, 2, '0x03 0x32','Lamp Brightness',
+    LAMP_BRIGHTNESS = ('BF', '<0x03:PF:>', 1, 2, '\x03\x32','Lamp Brightness',
                        'Byte 1 is lamp to control: 0x01 = Lamp1 0x02 = Lamp2 0x03 = Both Lamps, Byte 2 is brightness between 0x00 and 0x64')
 
     """
+    Set <\x04:FX:\x00>
     Set focus speed
     1 byte between 0x00 and 0x0F
-    Default is 0x00 : set <0x04:FX:0x00>
+    Default is 0x00 : set <\x04:FX:\x00>
 
     No get focus speed
     ???set <0x03:FP:>
-    ???FP + 1 byte between 0x00 and 0xC8
+    ???FP + 1 byte between \x00 and \xC8
     """
-    FOCUS_SPEED = ('FX', None, 1, 1, 0x00, 'Focus Speed','between 0x00 and 0x0F')
+    FOCUS_SPEED = ('FX', None, 1, 1, '\x00', 'Focus Speed','between 0x00 and 0x0F')
 
     """
+    set <\x04:ZX:\x00>
     Set zoom speed.
     1 byte between 0x00 and 0x0F
-    Default is 0x00 : set <0x04:ZX:0x00>
+    Default is 0x00 : set <\x04:ZX:\x00>
 
     ???get <0x03:ZP:>
     ???ZP + 1 byte between 0x00 and 0xC8
     """
-    ZOOM_SPEED = ('ZX', None, 1, 1, 0x00, 'Zoom Speed', 'between 0x00 and 0x0F')
+    ZOOM_SPEED = ('ZX', None, 1, 1, '\x00', 'Zoom Speed', 'between 0x00 and 0x0F')
 
     """
-    Iris
+    Set <\x04:IG:\x08>
+    Iris_Position
     1 byte between 0x00 and 0x0F
     default is 0x08 <0x04:IG:0x08>
 
     IP + 1 byte between 0x00
     get <0x03:IP>
     """
-    IRIS = ('IG', '<0x03:IP>', 1,1, 0x08, 'IRIS', 'between 0x00 and 0x0F')
+    IRIS_POSITION = ('IG', '<0x03:IP>', 1,1, '\x08', 'Iris Position', 'between 0x00 and 0x0F')
 
     """
-    Zoom to go
+    Zoom Position
+    set <\x04:ZG:\x64>
+
     1 byte between 0x00 and 0xC8 (200 Zoom positions)
     Default value is <0x04:ZG:0x64>
     ZP + 1 byte between 0x00 and 0xC8
     get <0x03:ZP:>
     """
-    ZOOM_TO_GO = ('ZG', '<0x03:ZP:>', 1, 1, 0x64, 'Zoom to go', 'between 0x00 and 0xC8')
+    ZOOM_POSITION = ('ZG', '<0x03:ZP:>', 1, 1, '\x64', 'Zoom Position', 'between 0x00 and 0xC8')
 
     """
     Pan Speed
@@ -246,7 +273,7 @@ class KMLParameter(DriverParameter):
 
     ???? No get pan speed
     """
-    PAN_SPEED = ('DS', None, None, None, 0x32, 'Pan Speed', 'between 0x00 and 0x64')
+    PAN_SPEED = ('DS', None, None, None, '\x32', 'Pan Speed', 'between 0x00 and 0x64')
 
     """
     Set tilt speed
@@ -255,7 +282,7 @@ class KMLParameter(DriverParameter):
 
     ??? not get tilt speed
     """
-    TILT_SPEED = ('TA', None, None, None, 0x32, 'TILT Speed','between 0x00 and 0x64')
+    TILT_SPEED = ('TA', None, None, None, '\x32', 'TILT Speed','between 0x00 and 0x64')
 
     """
     Enable or disable the soft end stops of the pan and tilt device
@@ -272,7 +299,7 @@ class KMLParameter(DriverParameter):
     Byte7 = End stops enable (0x1 = enabled, 0x0 = disabled)
     Bytes 1 to 6 are ASCII characters between 0x30 and 0x39
     """
-    ENABLE_SOFT_END = ('ES', None, None, None,'Enable Soft End','0x00 = Disable 0x01 = Enable')
+    SOFT_END_STOPS = ('ES', None, 7, 1,'Soft End Stops','0x00 = Disable 0x01 = Enable')
 
     """
     3 Bytes representing a three letter string containing the required pan location.
@@ -292,7 +319,7 @@ class KMLParameter(DriverParameter):
     Byte7 = End stops enable (0x1 = enabled, 0x0 = disabled)
     Bytes 1 to 6 are ASCII characters between 0x30 and 0x39
     """
-    PAN_LOCATION = ('PP', '<0x03:AS:>',4, 3,'0x30 0x37 0x35','Pan Location',
+    PAN_POSITION = ('PP', '<0x03:AS:>',4, 3,'\x30\x37\x35','Pan Position',
                     'Byte1 = Hundreds of degrees, Byte2 = Tens of degrees, Byte 3 = Units of degrees')
 
     """
@@ -309,21 +336,30 @@ class KMLParameter(DriverParameter):
     Byte3 = Tilt Position units
     Byte4 = Pan Position hundreds
     Byte5 = Pan Position tens Byte6 = Pan Position units
+    Byte6 = Pan Position Pan Position units
     Byte7 = End stops enable (0x1 = enabled, 0x0 = disabled)
     Bytes 1 to 6 are ASCII characters between 0x30 and 0x39
     """
-    TILT_LOCATION = ('TP', '<0x03:AS:>',4, 3, '0x30 0x37 0x35', 'Tilt Location',
+    TILT_POSITION = ('TP', '<0x03:AS:>',1, 3, '\x30\x37\x35', 'Tilt Position',
                     'Byte1 = Hundreds of degrees, Byte2 = Tens of degrees, Byte 3 = Units of degrees')
 
+    """
+    set <\x04:FG:\x64>
+    1 byte between 0x00 and 0xC8
+
+    get <\x03:FP:>
+    """
+    FOCUS_POSITION = ('FG', '<\x03:FP:>', 1, 1, '\x64', 'Focus Position', 'between \x00 and \xC8')
 
     # Engineering parameters for the scheduled commands
     SAMPLE_INTERVAL = (None, None, None, None, '00:00:00', 'Sample Interval', 'hh:mm:ss, 00:00:00 will turn off the schedule')
     ACQUIRE_STATUS_INTERVAL = (None, None, None, None, '00:00:00', 'Acquire Status Interval', 'hh:mm:ss, 00:00:00 will turn off the schedule')
     VIDEO_FORWARDING = (None, None, None, None, False, 'Video Forwarding Flag',
                         'True - Turn on Video, False - Turn off video')
-    VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video_forwarding_timeout',
+    VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video forwarding timeout',
                                 'hh:mm:ss, 00:00:00 means No timeout')
-
+    PRESET_NUMBER = (None, None, None, None,1,'Preset number', 'preset number (1- 15)' )
+    AUTO_CAPTURE_DURATION = (None, None, None, None, '3', 'Auto Capture Duration','1 to 5 Seconds')
 
 
 
@@ -337,34 +373,34 @@ class KMLInstrumentCmds(BaseEnum):
     START_CAPTURE = 'SP'
     STOP_CAPTURE = 'SR'
 
-    GET_CAPTURE_STATUS = 'SS'
+    #GET_CAPTURE_STATUS = 'SS'
     TAKE_SNAPSHOT = 'CI'
 
-    FOCUS_NEAR = 'FN'
-    FOCUS_FAR = 'FF'
+    START_FOCUS_NEAR = 'FN'
+    START_FOCUS_FAR = 'FF'
     STOP_FOCUS = 'FS'
-    GET_FOCUS_POSITION = 'FP'
-    SET_FOCUS_TO_GIVEN_POSITION = 'FG'
+    #GET_FOCUS_POSITION = 'FP'
+    #SET_FOCUS_TO_GIVEN_POSITION = 'FG'
 
-    ZOOM_WIDER = 'ZW'
-    ZOOM_TELEPHOTO = 'ZT'
+    START_ZOOM_OUT = 'ZW'
+    START_ZOOM_IN = 'ZT'
     STOP_ZOOM ='ZS'
-    GET_ZOOM_POSITION ='ZP'
-    ZOOM_GIVEN_POSITION = 'ZG'
+    #GET_ZOOM_POSITION ='ZP'
+    #ZOOM_GIVEN_POSITION = 'ZG'
 
     INCREASE_IRIS = 'II'
     DECREASE_IRIS = 'ID'
-    GET_IRIS = 'IP'
-    SET_IRIS = 'IG'
+    #GET_IRIS = 'IP'
+    #SET_IRIS = 'IG'
 
-    PAN_LEFT = 'PL'
-    PAN_RIGHT = 'PR'
+    START_PAN_LEFT = 'PL'
+    START_PAN_RIGHT = 'PR'
     STOP_PAN = 'PS'
-    PAN_POSITION = 'PP'
+    #PAN_POSITION = 'PP'
 
-    TILT_UP = 'TU'
-    TILT_DOWN = 'TD'
-    TILT_STOP = 'TS'
+    START_TILT_UP = 'TU'
+    START_TILT_DOWN = 'TD'
+    STOP_TILT = 'TS'
 
     GO_TO_PRESET = 'XG'
 
@@ -379,7 +415,9 @@ class KMLInstrumentCmds(BaseEnum):
 
     LASER_ON = 'OL'
     LASER_OFF = 'NL'
+
     GET_DISK_USAGE = 'GC'
+    HEALTH_REQUEST  = 'HS'
 
     GET = 'get'
     SET = 'set'
@@ -390,7 +428,7 @@ class CAMDSProtocolState(DriverProtocolState):
     protocols.
     """
 
-    CAPTURE = 'DRIVER_STATE_CAPTURE'
+    #CAPTURE = 'DRIVER_STATE_CAPTURE'
 
 
 class KMLProtocolState(BaseEnum):
@@ -401,7 +439,7 @@ class KMLProtocolState(BaseEnum):
     COMMAND = CAMDSProtocolState.COMMAND
     AUTOSAMPLE = CAMDSProtocolState.AUTOSAMPLE
     DIRECT_ACCESS = CAMDSProtocolState.DIRECT_ACCESS
-    CAPTURE = CAMDSProtocolState.CAPTURE
+
 
 class KMLProtocolEvent(BaseEnum):
     """
@@ -424,13 +462,25 @@ class KMLProtocolEvent(BaseEnum):
 
     START_AUTOSAMPLE = DriverEvent.START_AUTOSAMPLE
     STOP_AUTOSAMPLE = DriverEvent.STOP_AUTOSAMPLE
-    RECOVER_AUTOSAMPLE = 'PROTOCOL_EVENT_RECOVER_AUTOSAMPLE'
-    RESTORE_FACTORY_PARAMS = "PROTOCOL_EVENT_RESTORE_FACTORY_PARAMS"
 
     ACQUIRE_STATUS = DriverEvent.ACQUIRE_STATUS
+    ACQUIRE_SAMPLE = DriverEvent.ACQUIRE_SAMPLE
 
-    START_CAPTURE = 'PROTOCOL_EVENT_START_CAPTURE'
-    STOP_CAPTURE = 'PROTOCOL_EVENT_STOP_CAPTURE'
+    AUTO_CAPTURE = DriverEvent.AUTO_CAPTURE
+
+    LASER_1_ON = "DRIVER_EVENT_LASER_1_ON"
+    LASER_2_ON = "DRIVER_EVENT_LASER_2_ON"
+    LASER_BOTH_ON = "DRIVER_EVENT_LASER_BOTH_ON"
+    LASER_1_OFF = "DRIVER_EVENT_LASER_1_OFF"
+    LASER_2_OFF = "DRIVER_EVENT_LASER_2_OFF"
+    LASER_BOTH_OFF = "DRIVER_EVENT_LASER_BOTH_OFF"
+
+    LAMP_1_ON = "DRIVER_EVENT_LAMP_1_ON"
+    LAMP_2_ON = "DRIVER_EVENT_LAMP_2_ON"
+    LAMP_BOTH_ON = "DRIVER_EVENT_LAMP_BOTH_ON"
+    LAMP_1_OFF = "DRIVER_EVENT_LAMP_1_OFF"
+    LAMP_2_OFF = "DRIVER_EVENT_LAMP_2_OFF"
+    LAMP_BOTH_OFF = "DRIVER_EVENT_LAMP_BOTH_OFF"
 
 
 class KMLCapability(BaseEnum):
@@ -440,8 +490,22 @@ class KMLCapability(BaseEnum):
     START_AUTOSAMPLE = DriverEvent.START_AUTOSAMPLE
     STOP_AUTOSAMPLE = DriverEvent.STOP_AUTOSAMPLE
     ACQUIRE_STATUS = KMLProtocolEvent.ACQUIRE_STATUS
-    START_CAPTURE = KMLProtocolEvent.START_CAPTURE
-    STOP_CAPTURE = KMLProtocolEvent.STOP_CAPTURE
+    ACQUIRE_SAMPLE = KMLProtocolEvent.ACQUIRE_SAMPLE
+    EXECUTE_AUTO_CAPTURE = KMLProtocolEvent.AUTO_CAPTURE
+
+    LASER_1_ON = KMLProtocolEvent.LASER_1_ON
+    LASER_2_ON = KMLProtocolEvent.LASER_2_ON
+    LASER_BOTH_ON = KMLProtocolEvent.LASER_BOTH_ON
+    LASER_1_OFF = KMLProtocolEvent.LASER_1_OFF
+    LASER_2_OFF = KMLProtocolEvent.LASER_2_OFF
+    LASER_BOTH_OFF = KMLProtocolEvent.LASER_BOTH_OFF
+
+    LAMP_1_ON = KMLProtocolEvent.LAMP_1_ON
+    LAMP_2_ON = KMLProtocolEvent.LAMP_2_ON
+    LAMP_BOTH_ON = KMLProtocolEvent.LAMP_BOTH_ON
+    LAMP_1_OFF = KMLProtocolEvent.LAMP_1_OFF
+    LAMP_2_OFF = KMLProtocolEvent.LAMP_2_OFF
+    LAMP_BOTH_OFF = KMLProtocolEvent.LAMP_BOTH_OFF
 
 
 class KMLScheduledJob(BaseEnum):
@@ -545,21 +609,21 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                                        self._handler_direct_access_stop_direct)
 
         #Capture state
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.START_CAPTURE,
-                                       self._handler_capture_start)
-        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.START_CAPTURE,
-                                       self._handler_capture_start)
-        self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.ENTER,
-                                       self._handler_capture_enter)
-        self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.EXIT,
-                                       self._handler_capture_exit)
-        self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.STOP_CAPTURE,
-                                       self._handler_capture_stop)
+        # self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.START_CAPTURE,
+        #                                self._handler_capture_start)
+        # self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.START_CAPTURE,
+        #                                self._handler_capture_start)
+        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.ENTER,
+        #                                self._handler_capture_enter)
+        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.EXIT,
+        #                                self._handler_capture_exit)
+        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.STOP_CAPTURE,
+        #                                self._handler_capture_stop)
 
 
         # Build dictionaries for driver schema
         self._build_param_dict()
-        self._build_command_dict()
+        #self._build_command_dict()
         self._build_driver_dict()
 
         # Add build handlers for device commands.
@@ -603,7 +667,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @retval Returns string ready for sending to instrument
         """
 
-        return "<0x03:%s:>%s" % (cmd, self._newline)
+        return "<\x03:%s:>" % cmd
 
 
     def build_camds_4byte_command(self, cmd, *args):
@@ -615,7 +679,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @retval Returns string ready for sending to instrument
         """
 
-        return "<0x04:%s:0x%s>%s" % (cmd, args[0], self._newline)
+        return "\x04:%s:%s>" % (cmd, args[0])
 
     def build_camds_5byte_command(self, cmd, *args):
         """
@@ -626,7 +690,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @retval Returns string ready for sending to instrument
         """
         sys.getsizeof("0x120x30")
-        return "<0x05:%s:0x%s0x%s>%s" % (cmd, args[0], args[1], self._newline)
+        return "<\x05:%s:0x%s0x%s>%s" % (cmd, args[0], args[1], self._newline)
 
     def stop_scheduled_job(self, schedule_job):
         """
