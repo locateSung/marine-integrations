@@ -37,6 +37,8 @@ from mi.core.instrument.protocol_param_dict import ParameterDictVisibility
 from mi.core.instrument.protocol_param_dict import ParameterDictType
 from mi.instrument.KML.driver import KMLProtocolEvent
 from mi.core.instrument.chunker import StringChunker
+from mi.instrument.KML.particles import CAMDS_HEALTH_STATUS, CAMDS_DISK_STATUS,\
+                                        CAMDS_HEALTH_STATUS_MATCHER, CAMDS_DISK_STATUS_MATCHER
 
 # default timeout.
 TIMEOUT = 20
@@ -444,35 +446,19 @@ class CAMDSProtocol(KMLProtocol):
         objects and REGEXes.
         """
 
-        # if (self._extract_sample(KML_COMPASS_CALIBRATION_DataParticle,
-        #                          KML_COMPASS_CALIBRATION_REGEX_MATCHER,
-        #                          chunk,
-        #                          timestamp)):
-        #     log.debug("_got_chunk - successful match for KML_COMPASS_CALIBRATION_DataParticle")
-        #
-        # elif (self._extract_sample(KML_PD0_PARSED_DataParticle,
-        #                            KML_PD0_PARSED_REGEX_MATCHER,
-        #                            chunk,
-        #                            timestamp)):
-        #     log.debug("_got_chunk - successful match for KML_PD0_PARSED_DataParticle")
-        #
-        # elif (self._extract_sample(KML_SYSTEM_CONFIGURATION_DataParticle,
-        #                            KML_SYSTEM_CONFIGURATION_REGEX_MATCHER,
-        #                            chunk,
-        #                            timestamp)):
-        #     log.debug("_got_chunk - successful match for KML_SYSTEM_CONFIGURATION_DataParticle")
-        #
-        # elif (self._extract_sample(KML_ANCILLARY_SYSTEM_DATA_PARTICLE,
-        #                            KML_ANCILLARY_SYSTEM_DATA_REGEX_MATCHER,
-        #                            chunk,
-        #                            timestamp)):
-        #     log.trace("_got_chunk - successful match for KML_ANCILLARY_SYSTEM_DATA_PARTICLE")
-        #
-        # elif (self._extract_sample(KML_TRANSMIT_PATH_PARTICLE,
-        #                            KML_TRANSMIT_PATH_REGEX_MATCHER,
-        #                            chunk,
-        #                            timestamp)):
-        #     log.trace("_got_chunk - successful match for KML_TRANSMIT_PATH_PARTICLE")
+        if (self._extract_sample(CAMDS_DISK_STATUS,
+                                 CAMDS_DISK_STATUS_MATCHER,
+                                 chunk,
+                                 timestamp)):
+            log.debug("_got_chunk - successful match for KML_COMPASS_CALIBRATION_DataParticle")
+
+        elif (self._extract_sample(CAMDS_HEALTH_STATUS,
+                                   CAMDS_HEALTH_STATUS_MATCHER,
+                                   chunk,
+                                   timestamp)):
+            log.debug("_got_chunk - successful match for KML_PD0_PARSED_DataParticle")
+        self.portAgent_timestamp = timestamp
+
 
     def _get_params(self):
         return dir(KMLParameter)
