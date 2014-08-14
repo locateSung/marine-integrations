@@ -23,11 +23,14 @@ from mi.instrument.teledyne.driver import NEWLINE
 from mi.core.instrument.data_particle import DataParticle
 from mi.core.instrument.data_particle import DataParticleKey
 from mi.core.instrument.data_particle import CommonDataParticleType
+from mi.core.exceptions import InstrumentProtocolException
 
 #
 # Particle Regex's'
 #
 CAMDS_RESPONSE = r'.*\n<::>'
+CAMDS_DISK_STATUS_MATCHER = r'<\x0B:\x06:GC[\0-\xFF]+>'
+CAMDS_HEALTH_STATUS_MATCHER = r'<\x0B:\x06:HS[\0-\xFF]+>'
 CAMDS_RESPONSE_MATCHER = re.compile(CAMDS_RESPONSE,re.DOTALL)
 
 # CAMDS_VIDEO = r'.{500}'
@@ -114,10 +117,84 @@ class CAMDS_DISK_STATUS_KEY(BaseEnum):
 class CAMDS_DISK_STATUS(DataParticle):
     _data_particle_type = DataParticleType.CAMDS_HEALTH_STATUS
 
+    def build_data_particle(self, size = None, disk_remaining = None,
+                            image_remaining = None, image_on_disk = None):
+        result = []
+        for key in [CAMDS_DISK_STATUS_KEY.size,
+                    CAMDS_DISK_STATUS_KEY.disk_remaining,
+                    CAMDS_DISK_STATUS_KEY.image_remaining,
+                    CAMDS_DISK_STATUS_KEY.image_on_disk ]:
+
+            if key == CAMDS_DISK_STATUS_KEY.size:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : disk_remaining
+                })
+
+            if key == CAMDS_DISK_STATUS_KEY.disk_remaining:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : disk_remaining
+                })
+
+            if key == CAMDS_DISK_STATUS_KEY.image_remaining:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : image_remaining
+                })
+
+            if key == CAMDS_DISK_STATUS_KEY.image_on_disk:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : image_on_disk
+                })
+        return result
+
     RE01 = re.compile(r'.*')
 
     def _build_parsed_values(self):
         # Initialize
+
+        ################
+        resopnse_striped = '%r' % self.raw_data.strip()
+        #check the size of the response
+        if len(resopnse_striped) != 12:
+            log.error("Disk status size should be 12 %r" +  resopnse_striped)
+            return
+        if resopnse_striped[0] != '<':
+            log.error("Disk status is not correctly formated %r" +  resopnse_striped)
+            return
+        if resopnse_striped[len(resopnse_striped) -1] != '>':
+            log.error("Disk status is not correctly formated %r" +  resopnse_striped)
+            return
+        if resopnse_striped[3] == KMLPrompt.NAK:
+            log.error("Disk status returns NAK %r" +  resopnse_striped)
+            return
+
+        int_bytes = bytearray(resopnse_striped)
+        byte1 = int_bytes[5]
+        byte2 = int_bytes[6]
+        byte3 = int_bytes[7]
+        byte4 = int_bytes[8]
+        byte5 = int_bytes[9]
+        byte6 = int_bytes[10]
+
+        available_disk = byte1 * pow(10, byte2)
+        available_disk_percent = byte3
+        temp = struct.pack('!h', resopnse_striped[7] + resopnse_striped[8])
+        images_remaining = temp[0]
+        temp = struct.pack('!h', resopnse_striped[9] + resopnse_striped[10])
+        images_on_disk = temp[0]
+
+        sample = CAMDS_DISK_STATUS(resopnse_striped)
+        parsed_sample = sample.build_data_particle(size = available_disk, disk_remaining = available_disk_percent,
+                            image_remaining = images_remaining,
+                            image_on_disk = images_on_disk)
+        if self._driver_event:
+                self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
+        #########################
+
+
         matches = {}
         for key, regex, formatter in [
             (CAMDS_DISK_STATUS_KEY.image_on_disk, self.RE01, float)
@@ -131,6 +208,8 @@ class CAMDS_DISK_STATUS(DataParticle):
                            DataParticleKey.VALUE: value})
 
         return result
+
+
 
 
 
