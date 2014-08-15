@@ -14,6 +14,7 @@ __license__ = 'Apache 2.0'
 import re
 import base64
 import time
+import functools
 
 import sys
 from mi.core.common import BaseEnum
@@ -59,12 +60,7 @@ class KMLPrompt(BaseEnum):
     ACK = '\x06'
     NAK = '\x15'
 
-
-class KMLParameter(DriverParameter):
-    """
-    Device parameters
-    """
-
+class parameterIndex(BaseEnum):
     SET = 0
     GET = 1
     Start = 2
@@ -73,6 +69,10 @@ class KMLParameter(DriverParameter):
     DISPLAY_NAME = 5
     DESCRIPTION = 6
 
+class KMLParameter(DriverParameter):
+    """
+    Device parameters
+    """
     #
     # set-able parameters
     #
@@ -318,7 +318,7 @@ class KMLParameter(DriverParameter):
     Byte7 = End stops enable (0x1 = enabled, 0x0 = disabled)
     Bytes 1 to 6 are ASCII characters between 0x30 and 0x39
     """
-    PAN_POSITION = ('PP', '<0x03:AS:>',4, 3,'\x30\x37\x35','Pan Position',
+    PAN_POSITION = ('PP', '<0x03:AS:>', 4, 3,'\x30\x37\x35','Pan Position',
                     'Byte1 = Hundreds of degrees, Byte2 = Tens of degrees, Byte 3 = Units of degrees')
 
     """
@@ -357,7 +357,7 @@ class KMLParameter(DriverParameter):
                         'True - Turn on Video, False - Turn off video')
     VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video forwarding timeout',
                                 'hh:mm:ss, 00:00:00 means No timeout')
-    PRESET_NUMBER = (None, None, None, None,1,'Preset number', 'preset number (1- 15)' )
+    PRESET_NUMBER = (None, None, None, None, 1,'Preset number', 'preset number (1- 15)' )
     AUTO_CAPTURE_DURATION = (None, None, None, None, '3', 'Auto Capture Duration','1 to 5 Seconds')
 
 
@@ -474,13 +474,8 @@ class KMLProtocolEvent(BaseEnum):
     LASER_2_OFF = "DRIVER_EVENT_LASER_2_OFF"
     LASER_BOTH_OFF = "DRIVER_EVENT_LASER_BOTH_OFF"
 
-    LAMP_1_ON = "DRIVER_EVENT_LAMP_1_ON"
-    LAMP_2_ON = "DRIVER_EVENT_LAMP_2_ON"
-    LAMP_BOTH_ON = "DRIVER_EVENT_LAMP_BOTH_ON"
-    LAMP_1_OFF = "DRIVER_EVENT_LAMP_1_OFF"
-    LAMP_2_OFF = "DRIVER_EVENT_LAMP_2_OFF"
-    LAMP_BOTH_OFF = "DRIVER_EVENT_LAMP_BOTH_OFF"
-
+    LAMP_ON = "DRIVER_EVENT_LAMP_ON"
+    LAMP_OFF = "DRIVER_EVENT_LAMP_OFF"
     SET_PRESET =  "DRIVER_EVENT_SET_PRESET"
     GOTO_PRESET = "DRIVER_EVENT_GOTO_PRESET"
 
@@ -599,30 +594,22 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                                        self._handler_command_acquire_status)
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.ACQUIRE_SAMPLE,
                                        self._handler_command_acquire_sample)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_1_ON,
-                                       self._handler_command_lamp_1_on)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_2_ON,
-                                       self._handler_command_lamp_2_on)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_BOTH_ON,
-                                       self._handler_command_lamp_both_on)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_1_OFF,
-                                       self._handler_command_lamp_1_off)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_2_OFF,
-                                       self._handler_command_lamp_2_off)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_BOTH_OFF,
-                                       self._handler_command_lamp_both_off)
+        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_ON,
+                                       self._handler_command_lamp_on)
+        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LAMP_OFF,
+                                       self._handler_command_lamp_off)
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_1_ON,
-                                       self._handler_command_laser_1_on)
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x01'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_2_ON,
-                                       self._handler_command_laser_2_on)
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x02'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_BOTH_ON,
-                                       self._handler_command_laser_both_on)
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x03'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_1_OFF,
-                                       self._handler_command_laser_1_off)
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x01'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_2_OFF,
-                                       self._handler_command_laser_2_off)
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x02'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.LASER_BOTH_OFF,
-                                       self._handler_command_laser_both_off)
+                                      self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x03'))
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.SET_PRESET,
                                        self._handler_command_set_preset)
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.GOTO_PRESET,
@@ -670,89 +657,93 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         #self._build_command_dict()
         self._build_driver_dict()
 
+        ##################
+
+        ##########
         # Add build handlers for device commands.
-        self._add_build_handler(KMLInstrumentCmds.START_CAPTURE, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.STOP_CAPTURE, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.DECREASE_IRIS, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.FOCUS_FAR, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.FOCUS_GIVEN_POSITION, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.FOCUS_NEAR, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.GET_CAMERA_GAIN, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.GET_CAMERA_MODE, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.GET_CAMERA_MODE, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.GET_CAPTURE_STATUS, self.build_simple_command)
 
         self._add_build_handler(KMLInstrumentCmds.SET, self._build_set_command)
         self._add_build_handler(KMLInstrumentCmds.GET, self._build_get_command)
 
+        self._add_build_handler(KMLInstrumentCmds.START_CAPTURE, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_CAPTURE, self.build_simple_command)
 
-        self._add_build_handler(KMLInstrumentCmds.SET_PRESET, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.GO_TO_PRESET, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.LAMP_OFF, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.LAMP_ON, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.LASER_OFF, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.LASER_ON, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.PAN_LEFT_SOFT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.PAN_RIGHT_SOFT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.DECREASE_IRIS, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_CAPTURE, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_FOCUS_FAR, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_FOCUS_NEAR, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_PAN_RIGHT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_PAN_LEFT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_TILT_DOWN, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_TILT_UP, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.TILE_UP_SOFT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.TILE_DOWN_SOFT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.GET_DISK_USAGE, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.HEALTH_REQUEST, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_ZOOM_IN, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.START_ZOOM_OUT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.INCREASE_IRIS, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.TAKE_SNAPSHOT, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.STOP_ZOOM, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.STOP_CAPTURE, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.STOP_FOCUS, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.STOP_PAN, self._parse_get_response)
-        self._add_build_handler(KMLInstrumentCmds.STOP_TILT, self._parse_get_response)
+        self._add_build_handler(KMLInstrumentCmds.TAKE_SNAPSHOT, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.START_FOCUS_NEAR, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.START_FOCUS_FAR, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_FOCUS, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.START_ZOOM_OUT, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.START_ZOOM_IN, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_ZOOM, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.INCREASE_IRIS, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.DECREASE_IRIS, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.GO_TO_PRESET, self.build_preset_command)
+        self._add_build_handler(KMLInstrumentCmds.SET_PRESET, self.build_preset_command)
+
+        self._add_build_handler(KMLInstrumentCmds.START_PAN_LEFT, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.START_PAN_RIGHT, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_PAN, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.START_TILT_UP, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.START_TILT_DOWN, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_TILT, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.TILE_UP_SOFT, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.TILE_DOWN_SOFT, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.PAN_LEFT_SOFT, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.PAN_RIGHT_SOFT, self.build_simple_command)
+
+        self._add_build_handler(KMLInstrumentCmds.LAMP_ON, self.build_lamp_command)
+        self._add_build_handler(KMLInstrumentCmds.LAMP_OFF, self.build_lamp_command)
+
+        self._add_build_handler(KMLInstrumentCmds.LASER_ON, self.build_lamp_command)
+        self._add_build_handler(KMLInstrumentCmds.LASER_OFF, self.build_lamp_command)
+
+        self._add_build_handler(KMLInstrumentCmds.GET_DISK_USAGE, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.HEALTH_REQUEST, self.build_simple_command)
 
         # add response_handlers
         self._add_response_handler(KMLInstrumentCmds.SET, self._parse_set_response)
         self._add_response_handler(KMLInstrumentCmds.GET, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.SET_PRESET, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.GO_TO_PRESET, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.LAMP_OFF, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.LAMP_ON, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.LASER_OFF, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.LASER_ON, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.PAN_LEFT_SOFT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.PAN_RIGHT_SOFT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.DECREASE_IRIS, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_CAPTURE, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_FOCUS_FAR, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_FOCUS_NEAR, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_PAN_RIGHT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_PAN_LEFT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_TILT_DOWN, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_TILT_UP, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.TILE_UP_SOFT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.TILE_DOWN_SOFT, self._parse_get_response)
+
+        self._add_response_handler(KMLInstrumentCmds.SET_PRESET, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.GO_TO_PRESET, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.LAMP_OFF, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.LAMP_ON, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.LASER_OFF, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.LASER_ON, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.PAN_LEFT_SOFT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.PAN_RIGHT_SOFT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.DECREASE_IRIS, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_CAPTURE, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_FOCUS_FAR, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_FOCUS_NEAR, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_PAN_RIGHT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_PAN_LEFT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_TILT_DOWN, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_TILT_UP, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.TILE_UP_SOFT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.TILE_DOWN_SOFT, self._parse_simple_response)
 
         #Generate data particle
-        self._add_response_handler(KMLInstrumentCmds.GET_DISK_USAGE, self._parse_get_disk_usage_response)
+        self._add_response_handler(KMLInstrumentCmds.GET_DISK_USAGE, self._parse_simple_response)
 
         #Generate data particle
-        self._add_response_handler(KMLInstrumentCmds.HEALTH_REQUEST, self._parse_health_request_response)
-
-        self._add_response_handler(KMLInstrumentCmds.START_ZOOM_IN, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.START_ZOOM_OUT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.INCREASE_IRIS, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.TAKE_SNAPSHOT, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.STOP_ZOOM, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.STOP_CAPTURE, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.STOP_FOCUS, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.STOP_PAN, self._parse_get_response)
-        self._add_response_handler(KMLInstrumentCmds.STOP_TILT, self._parse_get_response)
+        self._add_response_handler(KMLInstrumentCmds.HEALTH_REQUEST, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_ZOOM_IN, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.START_ZOOM_OUT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.INCREASE_IRIS, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.TAKE_SNAPSHOT, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.STOP_ZOOM, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.STOP_CAPTURE, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.STOP_FOCUS, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.STOP_PAN, self._parse_simple_response)
+        self._add_response_handler(KMLInstrumentCmds.STOP_TILT, self._parse_simple_response)
 
         # State state machine in UNKNOWN state.
         self._protocol_fsm.start(KMLProtocolState.UNKNOWN)
@@ -1409,7 +1400,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         try:
-            self._do_cmd_no_resp(KMLInstrumentCmds.TAKE_SNAPSHOT, *args, **kwargs)
+            self._do_cmd_resp(KMLInstrumentCmds.TAKE_SNAPSHOT, *args, **kwargs)
 
         except Exception as e:
             raise InstrumentParameterException(
@@ -1435,7 +1426,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         #  GET_DISK_USAGE = 'GC'
         #  HEALTH_REQUEST  = 'HS'
         try:
-            self._do_cmd_no_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
+            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
 
         except Exception as e:
             raise InstrumentParameterException(
@@ -1443,7 +1434,253 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         time.sleep(.5)
         try:
-            self._do_cmd_no_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
+            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+
+        return next_state, (None, None)
+
+    def _handler_command_lamp_on(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 30
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.LAMP_ON, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        return next_state, (None, None)
+
+    def _handler_command_lamp_off(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 30
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.LAMP_OFF, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        return next_state, (None, None)
+
+    def _handler_command_laser_wrapper(self, command, light):
+
+        def _handler_command_laser(self, *args, **kwargs):
+            """
+            Take a snapshot
+            """
+            log.debug("IN _handler_command_acquire_status")
+            next_state = None
+
+            kwargs['timeout'] = 2
+            kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+            try:
+                self._do_cmd_resp(command, light, *args, **kwargs)
+
+            except Exception as e:
+                raise InstrumentParameterException(
+                    'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+            return next_state, (None, None)
+
+        return _handler_command_laser
+
+    def _handler_command_set_preset(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        pd = self._param_dict.get_all()
+
+        result = []
+        presetNumber = 1
+        for key, value in self.raw_data.items():
+            if key == KMLParameter.PRESET_NUMBER:
+                presetNumber = value
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.SET_PRESET, presetNumber, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        return next_state, (None, None)
+
+    def _handler_command_goto_preset(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        pd = self._param_dict.get_all()
+
+        result = []
+        presetNumber = 1
+        for key, value in self.raw_data.items():
+            if key == KMLParameter.PRESET_NUMBER:
+                presetNumber = value
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.GO_TO_PRESET, presetNumber, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        return next_state, (None, None)
+
+
+    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        time.sleep(.5)
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+
+        return next_state, (None, None)
+
+    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        time.sleep(.5)
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+
+        return next_state, (None, None)
+
+    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        time.sleep(.5)
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+
+        return next_state, (None, None)
+
+    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
+        """
+        Take a snapshot
+        """
+        log.debug("IN _handler_command_acquire_status")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        # Execute the following commands
+        #  GET_DISK_USAGE = 'GC'
+        #  HEALTH_REQUEST  = 'HS'
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        time.sleep(.5)
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
 
         except Exception as e:
             raise InstrumentParameterException(
@@ -1511,32 +1748,6 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 'Protocol._parse_set_response : Set command not recognized: %s' + resopnse_striped,
                 + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
 
-        int_bytes = bytearray(resopnse_striped)
-        byte1 = int_bytes[5]
-        byte2 = int_bytes[6]
-        byte3 = int_bytes[7]
-        byte4 = int_bytes[8]
-        byte5 = int_bytes[9]
-        byte6 = int_bytes[10]
-
-        available_disk = byte1 * pow(10, byte2)
-        available_disk_percent = byte3
-        temp = struct.pack('!h', resopnse_striped[7] + resopnse_striped[8])
-        images_remaining = temp[0]
-        temp = struct.pack('!h', resopnse_striped[9] + resopnse_striped[10])
-        images_on_disk = temp[0]
-
-        sample = CAMDS_DISK_STATUS(resopnse_striped)
-        parsed_sample = sample.build_data_particle(size = available_disk, disk_remaining = available_disk_percent,
-                            image_remaining = images_remaining,
-                            image_on_disk = images_on_disk)
-        if self._driver_event:
-                self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
-
-
-
-
-
     def _build_get_command(self, cmd, param, **kwargs):
         """
         param=val followed by newline.
@@ -1555,7 +1766,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # except KeyError:
         #     raise InstrumentParameterException('Unknown driver parameter.. %s' % param)
 
-        return param[KMLParameter.GET]
+        return param[parameterIndex.GET]
 
     def _build_set_command(self, cmd, param, val):
         """
@@ -1572,15 +1783,68 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self.get_cmd = cmd
 
         try:
-            str_val = self._param_dict.format(param, val)
-            # TODO replace the value set in the set command
+            # str_val = self._param_dict.format(param, val)
+            # # TODO replace the value set in the set command
 
-            set_cmd = '<%s:%s:%s>' % (param[KMLParameter.LENGTH] + 3, param[KMLParameter.SET], str_val) + NEWLINE
+            data_size = len(val) + 3
+            set_cmd = '<%s:%s:%s>' % (data_size, param[parameterIndex.SET], val)
             log.trace("IN _build_set_command CMD = '%s'", set_cmd)
         except KeyError:
             raise InstrumentParameterException('Unknown driver parameter. %s' % param)
 
         return set_cmd
+
+    def build_simple_command(self, cmd, param, val):
+        """
+        Build handler for set commands. param=val followed by newline.
+        String val constructed by param dict formatting function.
+        @param param the parameter key to set.
+        @param val the parameter value to set.
+        @return The set command to be sent to the device.
+        @throws InstrumentProtocolException if the parameter is not valid or
+        if the formatting function could not accept the value passed.
+        """
+
+        #self.get_param = param
+        self.get_cmd = cmd
+
+        command = '<\x03:%s:>' % cmd
+        return command
+
+    def build_lamp_command(self, cmd, data, val):
+        """
+        Build handler for set commands. param=val followed by newline.
+        String val constructed by param dict formatting function.
+        @param param the parameter key to set.
+        @param val the parameter value to set.
+        @return The set command to be sent to the device.
+        @throws InstrumentProtocolException if the parameter is not valid or
+        if the formatting function could not accept the value passed.
+        """
+
+        #self.get_param = param
+        self.get_cmd = cmd
+
+        command = '<\x03:%s:%s>' % (cmd, data)
+        return command
+
+    def build_preset_command(self, cmd, data, val):
+        """
+        Build handler for set commands. param=val followed by newline.
+        String val constructed by param dict formatting function.
+        @param param the parameter key to set.
+        @param val the parameter value to set.
+        @return The set command to be sent to the device.
+        @throws InstrumentProtocolException if the parameter is not valid or
+        if the formatting function could not accept the value passed.
+        """
+
+        #self.get_param = param
+        self.get_cmd = cmd
+
+        command = '<\x03:%s:%s>' % (cmd, data)
+        return command
+
 
     def _parse_set_response(self, response, prompt):
 
@@ -1619,12 +1883,28 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
 
         if resopnse_striped[3] == KMLPrompt.ACK:
-            self._param_dict.update(response, self.get_param)
 
-        #self.get_count = 0
+            #parse out parameter value first
+
+            if self.get_param[parameterIndex.GET] !=  None:
+                # No response data to process
+                return
+            if self.get_param[parameterIndex.LENGTH] == None:
+                # Not fixed size of the response data
+                # get the size of the responding data
+                raw_value = resopnse_striped[self.get_param[parameterIndex.Start]+ 6 :
+                                             len(resopnse_striped) - 2]
+            else:
+                raw_value = resopnse_striped[self.get_param[parameterIndex.Start]+ 6 :
+                                             self.get_param[parameterIndex.Start]+
+                                             self.get_param[parameterIndex.LENGTH]+6]
+
+            self._param_dict.update(response, target_params = self.get_param)
+
+        self.get_count = 0
         return response
 
-    def _parse_cmd_response(self, response, prompt):
+    def _parse_simple_response(self, response, prompt):
         log.trace("GET RESPONSE = " + repr(response))
 
         #Make sure the response is the right format
@@ -1637,11 +1917,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                                                + '  ' + resopnse_striped)
         if resopnse_striped[3] == KMLPrompt.NAK:
             raise InstrumentProtocolException(
-                'Protocol._parse_set_response : Set command not recognized: %s' + resopnse_striped,
+                'Protocol._parse_set_response : get command not recognized: %s' + resopnse_striped,
                 + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
-        if resopnse_striped[3] == KMLPrompt.ACK:
-            log.trace("The command was executed successfully : " + self.get_cmd)
-        #self.get_count = 0
+
+        self.get_count = 0
         return response
 
     def CAMDS_failure_message(self, error_code):

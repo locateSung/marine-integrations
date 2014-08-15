@@ -8,7 +8,7 @@
 from mi.core.common import Units, Prefixes
 from mi.core.common import BaseEnum
 import time
-from mi.instrument.KML.driver import KMLScheduledJob
+from mi.instrument.KML.driver import KMLScheduledJob, parameterIndex
 from mi.instrument.KML.driver import KMLCapability
 from mi.instrument.KML.driver import KMLInstrumentCmds
 from mi.instrument.KML.driver import KMLProtocolState
@@ -26,7 +26,8 @@ from mi.core.exceptions import InstrumentProtocolException
 from mi.core.instrument.instrument_driver import ResourceAgentState
 from mi.core.instrument.instrument_driver import ResourceAgentEvent
 from mi.core.instrument.port_agent_client import PortAgentClient
-from mi.instrument.KML.particles import CAMDS_VIDEO, DataParticleType
+from mi.instrument.KML.particles import CAMDS_VIDEO, DataParticleType, CAMDS_SNAPSHOT_MATCHER, CAMDS_IMAGE_METADATA, \
+    CAMDS_STOP_CAPTURING, CAMDS_START_CAPTURING
 from mi.core.instrument.data_particle import RawDataParticle
 
 from mi.core.log import get_logger
@@ -450,14 +451,32 @@ class CAMDSProtocol(KMLProtocol):
                                  CAMDS_DISK_STATUS_MATCHER,
                                  chunk,
                                  timestamp)):
-            log.debug("_got_chunk - successful match for KML_COMPASS_CALIBRATION_DataParticle")
+            log.debug("_got_chunk - successful match for CAMDS_DISK_STATUS")
 
         elif (self._extract_sample(CAMDS_HEALTH_STATUS,
                                    CAMDS_HEALTH_STATUS_MATCHER,
                                    chunk,
                                    timestamp)):
-            log.debug("_got_chunk - successful match for KML_PD0_PARSED_DataParticle")
-        self.portAgent_timestamp = timestamp
+            log.debug("_got_chunk - successful match for CAMDS_HEALTH_STATUS")
+
+        elif (self._extract_sample(CAMDS_IMAGE_METADATA,
+                                   CAMDS_SNAPSHOT_MATCHER,
+                                   chunk,
+                                   timestamp)):
+            log.debug("_got_chunk - successful match for CAMDS_IMAGE_METADATA(Snapshot)")
+
+        elif (self._extract_sample(CAMDS_IMAGE_METADATA,
+                                   CAMDS_START_CAPTURING,
+                                   chunk,
+                                   timestamp)):
+            log.debug("_got_chunk - successful match for CAMDS_IMAGE_METADATA(Start Capturing)")
+
+        elif (self._extract_sample(CAMDS_IMAGE_METADATA,
+                                   CAMDS_STOP_CAPTURING,
+                                   chunk,
+                                   timestamp)):
+            log.debug("_got_chunk - successful match for CAMDS_IMAGE_METADATA(Stop Capturing")
+        #self.portAgent_timestamp = timestamp
 
 
     def _get_params(self):
@@ -561,282 +580,282 @@ class Protocol(CAMDSProtocol):
         """
 
         self._param_dict.add(Parameter.NTP_SETTING,
-                             r'CD = (\d\d\d \d\d\d \d\d\d) \-+ Serial Data Out ',
+                             r'NOT USED',
                              lambda match: str(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.NTP_SETTING[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.NTP_SETTING[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.NTP_SETTING[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.NTP_SETTING[parameterIndex.DESCRIPTION],
                              startup_param=False,
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
-                             default_value=Parameter.NTP_SETTING[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.NTP_SETTING[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.NETWORK_DRIVE_LOCATION,
-                             r'CF = (\d+) \-+ Flow Ctrl ',
+                             r'NOT USED',
                              lambda match: str(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.NETWORK_DRIVE_LOCATION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.NETWORK_DRIVE_LOCATION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.NETWORK_DRIVE_LOCATION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.NETWORK_DRIVE_LOCATION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.WHEN_DISK_IS_FULL,
-                             r'CF = (\d+) \-+ Flow Ctrl ',
+                             r'NOT USED',
                              lambda match: str(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.WHEN_DISK_IS_FULL[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.WHEN_DISK_IS_FULL[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.WHEN_DISK_IS_FULL[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.WHEN_DISK_IS_FULL[parameterIndex.DESCRIPTION],
                              startup_param=False,
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
-                             default_value=Parameter.WHEN_DISK_IS_FULL[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.WHEN_DISK_IS_FULL[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.CAMERA_MODE,
-                             r'CH = (\d) \-+ Suppress Banner',
+                             r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.CAMERA_MODE[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.CAMERA_MODE[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.CAMERA_MODE[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.CAMERA_MODE[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.CAMERA_MODE[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.CAMERA_MODE[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.FRAME_RATE,
-                             r'CH = (\d) \-+ Suppress Banner',
+                             r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.FRAME_RATE[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.FRAME_RATE[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.FRAME_RATE[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.FRAME_RATE[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.FRAME_RATE[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.FRAME_RATE[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.IMAGE_RESOLUTION,
-                             r'CI = (\d+) \-+ Instrument ID ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.IMAGE_RESOLUTION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.IMAGE_RESOLUTION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.IMAGE_RESOLUTION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.IMAGE_RESOLUTION[parameterIndex.DESCRIPTION],
                              direct_access=True,
                              startup_param=True,
-                             default_value=Parameter.IMAGE_RESOLUTION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.IMAGE_RESOLUTION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.COMPRESSION_RATIO,
-                             r'CL = (\d) \-+ Sleep Enable',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.COMPRESSION_RATIO[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.COMPRESSION_RATIO[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.COMPRESSION_RATIO[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.COMPRESSION_RATIO[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.COMPRESSION_RATIO[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.COMPRESSION_RATIO[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.SHUTTER_SPEED,
-                             r'CN = (\d) \-+ Save NVRAM to recorder',
+                             r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.SHUTTER_SPEED[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.SHUTTER_SPEED[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.SHUTTER_SPEED[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.SHUTTER_SPEED[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.SHUTTER_SPEED[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.SHUTTER_SPEED[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.CAMERA_GAIN,
-                             r'CP = (\d) \-+ PolledMode ',
+                             r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              int,
                              type=ParameterDictType.BOOL,
-                             display_name=Parameter.CAMERA_GAIN[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.CAMERA_GAIN[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.CAMERA_GAIN[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.CAMERA_GAIN[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.CAMERA_GAIN[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.CAMERA_GAIN[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.LAMP_BRIGHTNESS,
-                             r'CQ = (\d+) \-+ Xmt Power ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.LAMP_BRIGHTNESS[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.LAMP_BRIGHTNESS[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.LAMP_BRIGHTNESS[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.LAMP_BRIGHTNESS[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.LAMP_BRIGHTNESS[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.LAMP_BRIGHTNESS[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.FOCUS_SPEED,
-                             r'CX = (\d) \-+ Trigger Enable ',
+                             r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.FOCUS_SPEED[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.FOCUS_SPEED[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.FOCUS_SPEED[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.FOCUS_SPEED[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.FOCUS_SPEED[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.FOCUS_SPEED[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.ZOOM_SPEED,
-                             r'EA = ([+-]\d+) \-+ Heading Alignment',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              lambda value: '%+06d' % value,
                              type=ParameterDictType.INT,
-                             display_name=Parameter.ZOOM_SPEED[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.ZOOM_SPEED[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.ZOOM_SPEED[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.ZOOM_SPEED[parameterIndex.DESCRIPTION],
                              direct_access=True,
                              startup_param=True,
-                             default_value=Parameter.ZOOM_SPEED[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.ZOOM_SPEED[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.IRIS_POSITION,
-                             r'EB = ([+-]\d+) \-+ Heading Bias',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.IRIS_POSITION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.IRIS_POSITION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.IRIS_POSITION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.IRIS_POSITION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.IRIS_POSITION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.IRIS_POSITION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.ZOOM_POSITION,
-                             r'EB = ([+-]\d+) \-+ Heading Bias',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.ZOOM_POSITION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.ZOOM_POSITION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.ZOOM_POSITION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.ZOOM_POSITION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.ZOOM_POSITION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.ZOOM_POSITION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.PAN_SPEED,
-                             r'EB = ([+-]\d+) \-+ Heading Bias',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.PAN_SPEED[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.PAN_SPEED[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.PAN_SPEED[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.PAN_SPEED[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.PAN_SPEED[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.PAN_SPEED[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.TILT_SPEED,
-                             r'EC = (\d+) \-+ Speed Of Sound',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.TILT_SPEED[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.TILT_SPEED[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.TILT_SPEED[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.TILT_SPEED[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.TILT_SPEED[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.TILT_SPEED[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.SOFT_END_STOPS,
-                             r'ED = (\d+) \-+ Transducer Depth ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.SOFT_END_STOPS[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.SOFT_END_STOPS[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.SOFT_END_STOPS[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.SOFT_END_STOPS[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.SOFT_END_STOPS[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.SOFT_END_STOPS[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.PAN_POSITION,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.PAN_POSITION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.PAN_POSITION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.PAN_POSITION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.PAN_POSITION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.PAN_POSITION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.PAN_POSITION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.TILT_POSITION,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.TILT_POSITION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.TILT_POSITION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.TILT_POSITION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.TILT_POSITION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=Parameter.TILT_POSITION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.TILT_POSITION[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.SAMPLE_INTERVAL,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.SAMPLE_INTERVAL[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.SAMPLE_INTERVAL[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.SAMPLE_INTERVAL[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.SAMPLE_INTERVAL[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.SAMPLE_INTERVAL[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.SAMPLE_INTERVAL[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.ACQUIRE_STATUS_INTERVAL,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.ACQUIRE_STATUS_INTERVAL[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.ACQUIRE_STATUS_INTERVAL[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.ACQUIRE_STATUS_INTERVAL[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.ACQUIRE_STATUS_INTERVAL[parameterIndex.DEFAULT_DATA])
 
 
         self._param_dict.add(Parameter.VIDEO_FORWARDING,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.VIDEO_FORWARDING[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.VIDEO_FORWARDING[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.VIDEO_FORWARDING[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.VIDEO_FORWARDING[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.VIDEO_FORWARDING[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.VIDEO_FORWARDING[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.VIDEO_FORWARDING_TIMEOUT,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.VIDEO_FORWARDING_TIMEOUT[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.VIDEO_FORWARDING_TIMEOUT[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.VIDEO_FORWARDING_TIMEOUT[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.VIDEO_FORWARDING_TIMEOUT[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.VIDEO_FORWARDING_TIMEOUT[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.VIDEO_FORWARDING_TIMEOUT[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.PRESET_NUMBER,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.PRESET_NUMBER[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.PRESET_NUMBER[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.PRESET_NUMBER[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.PRESET_NUMBER[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.PRESET_NUMBER[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.PRESET_NUMBER[parameterIndex.DEFAULT_DATA])
 
         self._param_dict.add(Parameter.AUTO_CAPTURE_DURATION,
-                             r'EP = ([\+\-\d]+) \-+ Tilt 1 Sensor ',
+                             r'NOT USED',
                              lambda match: int(match.group(1)),
                              str,
                              type=ParameterDictType.STRING,
-                             display_name=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DISPLAY_NAME],
-                             value_description=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DESCRIPTION],
+                             display_name=Parameter.AUTO_CAPTURE_DURATION[parameterIndex.DISPLAY_NAME],
+                             value_description=Parameter.AUTO_CAPTURE_DURATION[parameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=Parameter.AUTO_CAPTURE_DURATION[KMLParameter.DEFAULT_DATA])
+                             default_value=Parameter.AUTO_CAPTURE_DURATION[parameterIndex.DEFAULT_DATA])
 
 
         self._param_dict.set_default(Parameter.SAMPLE_INTERVAL)

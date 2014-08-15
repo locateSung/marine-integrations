@@ -5,47 +5,29 @@
 @brief Driver particle code for the KML particles
 Release notes:
 """
+import struct
+from mi.instrument.KML.driver import KMLParameter
 
 __author__ = 'Sung Ahn'
 __license__ = 'Apache 2.0'
 
-import re
-from struct import unpack
-import time as time
-import datetime as dt
-
 from mi.core.log import get_logger
-
 log = get_logger()
-from mi.core.common import BaseEnum
-from mi.instrument.teledyne.driver import NEWLINE
 
+from mi.core.common import BaseEnum
 from mi.core.instrument.data_particle import DataParticle
 from mi.core.instrument.data_particle import DataParticleKey
 from mi.core.instrument.data_particle import CommonDataParticleType
-from mi.core.exceptions import InstrumentProtocolException
 
 #
 # Particle Regex's'
 #
 CAMDS_RESPONSE = r'.*\n<::>'
 CAMDS_DISK_STATUS_MATCHER = r'<\x0B:\x06:GC[\0-\xFF]+>'
-CAMDS_HEALTH_STATUS_MATCHER = r'<\x0B:\x06:HS[\0-\xFF]+>'
-CAMDS_RESPONSE_MATCHER = re.compile(CAMDS_RESPONSE,re.DOTALL)
-
-# CAMDS_VIDEO = r'.{500}'
-# CAMDS_VIDEO_MATCH = re.compile(CAMDS_VIDEO, re.DOTALL)
-
-# ADCP_PD0_PARSED_REGEX = r'\x7f\x7f(..)'  # .*
-# ADCP_PD0_PARSED_REGEX_MATCHER = re.compile(ADCP_PD0_PARSED_REGEX, re.DOTALL)
-# ADCP_SYSTEM_CONFIGURATION_REGEX = r'(Instrument S/N.*?)\>'
-# ADCP_SYSTEM_CONFIGURATION_REGEX_MATCHER = re.compile(ADCP_SYSTEM_CONFIGURATION_REGEX, re.DOTALL)
-# ADCP_COMPASS_CALIBRATION_REGEX = r'(ACTIVE FLUXGATE CALIBRATION MATRICES in NVRAM.*?)\>'
-# ADCP_COMPASS_CALIBRATION_REGEX_MATCHER = re.compile(ADCP_COMPASS_CALIBRATION_REGEX, re.DOTALL)
-# ADCP_ANCILLARY_SYSTEM_DATA_REGEX = r'(Ambient  Temperature.*\n.*\n.*)\n>'
-# ADCP_ANCILLARY_SYSTEM_DATA_REGEX_MATCHER = re.compile(ADCP_ANCILLARY_SYSTEM_DATA_REGEX)
-# ADCP_TRANSMIT_PATH_REGEX = r'(IXMT.*\n.*\n.*\n.*)\n>'
-# ADCP_TRANSMIT_PATH_REGEX_MATCHER = re.compile(ADCP_TRANSMIT_PATH_REGEX)
+CAMDS_HEALTH_STATUS_MATCHER = r'<\x07:\x06:HS[\0-\xFF]+>'
+CAMDS_SNAPSHOT_MATCHER = r'<\x04:\x06:CI>'
+CAMDS_START_CAPTURING = r'<\x04:\x06:SP>'
+CAMDS_STOP_CAPTURING = r'<\x04:\x06:SR>'
 
 
 # ##############################################################################
@@ -60,6 +42,7 @@ class DataParticleType(BaseEnum):
     CAMDS_VIDEO = "camds_video"
     CAMDS_HEALTH_STATUS = "camds_health_status"
     CAMDS_DISK_STATUS = "camds_disc_status"
+    CAMDS_IMAGE_METADATA = "camds_image_metadata"
 
 # keys for video stream
 class CAMDS_VIDEO_KEY(BaseEnum):
@@ -87,23 +70,57 @@ class CAMDS_HEALTH_STATUS_KEY(BaseEnum):
 class CAMDS_HEALTH_STATUS(DataParticle):
     _data_particle_type = DataParticleType.CAMDS_HEALTH_STATUS
 
-    RE01 = re.compile(r'.*')
+    def build_data_particle(self, temp = None, humidity = None,
+                            error = None):
+        result = []
+        for key in [CAMDS_HEALTH_STATUS_KEY.temp,
+                    CAMDS_HEALTH_STATUS_KEY.humidity,
+                    CAMDS_HEALTH_STATUS_KEY.error ]:
+
+            if key == CAMDS_HEALTH_STATUS_KEY.temp:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : temp
+                })
+
+            if key == CAMDS_HEALTH_STATUS_KEY.humidity:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : humidity
+                })
+
+            if key == CAMDS_HEALTH_STATUS_KEY.error:
+                result.append( {
+                DataParticleKey.VALUE_ID: key,
+                DataParticleKey.VALUE : error
+                })
+        return result
 
     def _build_parsed_values(self):
-        # Initialize
-        matches = {}
-        for key, regex, formatter in [
-            (CAMDS_HEALTH_STATUS_KEY.temp, self.RE01, float)
-        ]:
-            match = regex.search(self.raw_data)
-            matches[key] = formatter(match.group(1))
 
-        result = []
-        for key, value in matches.iteritems():
-            result.append({DataParticleKey.VALUE_ID: key,
-                           DataParticleKey.VALUE: value})
+        resopnse_striped = '%r' % self.raw_data.strip()
+        #check the size of the response
+        if len(resopnse_striped) != 7:
+            log.error("Disk status size should be 12 %r" +  resopnse_striped)
+            return
+        if resopnse_striped[0] != '<':
+            log.error("Disk status is not correctly formated %r" +  resopnse_striped)
+            return
+        if resopnse_striped[len(resopnse_striped) -1] != '>':
+            log.error("Disk status is not correctly formated %r" +  resopnse_striped)
+            return
 
-        return result
+        int_bytes = bytearray(resopnse_striped)
+        _temp = int_bytes[7]
+        _humidity = int_bytes[8]
+        _error = int_bytes[9]
+
+
+
+        sample = CAMDS_HEALTH_STATUS(resopnse_striped)
+        parsed_sample = sample.build_data_particle(temp = _temp, humidity = _humidity,
+                                                   error = _error)
+        return parsed_sample
 
 
 # GC command
@@ -115,7 +132,7 @@ class CAMDS_DISK_STATUS_KEY(BaseEnum):
 
 # Data particle for GC command
 class CAMDS_DISK_STATUS(DataParticle):
-    _data_particle_type = DataParticleType.CAMDS_HEALTH_STATUS
+    _data_particle_type = DataParticleType.CAMDS_DISK_STATUS
 
     def build_data_particle(self, size = None, disk_remaining = None,
                             image_remaining = None, image_on_disk = None):
@@ -150,7 +167,6 @@ class CAMDS_DISK_STATUS(DataParticle):
                 })
         return result
 
-    RE01 = re.compile(r'.*')
 
     def _build_parsed_values(self):
         # Initialize
@@ -167,49 +183,75 @@ class CAMDS_DISK_STATUS(DataParticle):
         if resopnse_striped[len(resopnse_striped) -1] != '>':
             log.error("Disk status is not correctly formated %r" +  resopnse_striped)
             return
-        if resopnse_striped[3] == KMLPrompt.NAK:
-            log.error("Disk status returns NAK %r" +  resopnse_striped)
-            return
 
         int_bytes = bytearray(resopnse_striped)
-        byte1 = int_bytes[5]
-        byte2 = int_bytes[6]
-        byte3 = int_bytes[7]
-        byte4 = int_bytes[8]
-        byte5 = int_bytes[9]
-        byte6 = int_bytes[10]
+        byte1 = int_bytes[7]
+        byte2 = int_bytes[8]
+        byte3 = int_bytes[9]
 
         available_disk = byte1 * pow(10, byte2)
         available_disk_percent = byte3
-        temp = struct.pack('!h', resopnse_striped[7] + resopnse_striped[8])
-        images_remaining = temp[0]
         temp = struct.pack('!h', resopnse_striped[9] + resopnse_striped[10])
+        images_remaining = temp[0]
+        temp = struct.pack('!h', resopnse_striped[11] + resopnse_striped[12])
         images_on_disk = temp[0]
 
         sample = CAMDS_DISK_STATUS(resopnse_striped)
         parsed_sample = sample.build_data_particle(size = available_disk, disk_remaining = available_disk_percent,
                             image_remaining = images_remaining,
                             image_on_disk = images_on_disk)
-        if self._driver_event:
-                self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
+        # if self._driver_event:
+        #         self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
         #########################
 
+        return parsed_sample
 
-        matches = {}
-        for key, regex, formatter in [
-            (CAMDS_DISK_STATUS_KEY.image_on_disk, self.RE01, float)
-        ]:
-            match = regex.search(self.raw_data)
-            matches[key] = formatter(match.group(1))
+
+#CAMDS meta data data particle
+class CAMDS_IMAGE_METADATA_KEY(BaseEnum):
+
+    PAN_POSITION = "camds_pan_position"
+    TILT_POSITION = "camds_tilt_position"
+    FOCUS_POSITION = "camds_focus_position"
+    ZOOM_POSITION = "camds_zoom_position"
+    IRIS_POSITION = "camds_iris_position"
+    GAIN = "camds_gain"
+    RESOLUTION = "camds_resolution"
+    BRIGHTNESS = "camds_brightness"
+
+# Data particle for GC command
+class CAMDS_IMAGE_METADATA(DataParticle):
+    _data_particle_type = DataParticleType.CAMDS_IMAGE_METADATA
+
+    def _build_parsed_values(self):
+        # Initialize
+        pd = self._param_dict.get_all()
 
         result = []
-        for key, value in matches.iteritems():
-            result.append({DataParticleKey.VALUE_ID: key,
+        for key, value in self.raw_data.items():
+            if key == KMLParameter.PAN_POSITION:
+                result.append({DataParticleKey.VALUE_ID: "camds_pan_position",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.TILT_POSITION:
+                result.append({DataParticleKey.VALUE_ID: "camds_tilt_position",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.FOCUS_POSITION:
+                result.append({DataParticleKey.VALUE_ID: "camds_focus_position",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.ZOOM_POSITION:
+                result.append({DataParticleKey.VALUE_ID: "camds_zoom_position",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.IRIS_POSITION:
+                result.append({DataParticleKey.VALUE_ID: "camds_iris_position",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.CAMERA_GAIN:
+                result.append({DataParticleKey.VALUE_ID: "camds_gain",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.IMAGE_RESOLUTION:
+                result.append({DataParticleKey.VALUE_ID: "camds_resolution",
+                           DataParticleKey.VALUE: value})
+            if key == KMLParameter.LAMP_BRIGHTNESS:
+                result.append({DataParticleKey.VALUE_ID: "camds_brightness",
                            DataParticleKey.VALUE: value})
 
         return result
-
-
-
-
-
