@@ -38,6 +38,7 @@ from mi.core.instrument.instrument_driver import DriverConfigKey
 from mi.core.driver_scheduler import DriverSchedulerConfigKey
 from mi.core.driver_scheduler import TriggerType
 from mi.core.instrument.driver_dict import DriverDictKey
+from mi.core.util import dict_equal
 
 
 # default timeout.
@@ -465,8 +466,6 @@ class KMLProtocolEvent(BaseEnum):
     ACQUIRE_STATUS = DriverEvent.ACQUIRE_STATUS
     ACQUIRE_SAMPLE = DriverEvent.ACQUIRE_SAMPLE
 
-    AUTO_CAPTURE = DriverEvent.AUTO_CAPTURE
-
     LASER_1_ON = "DRIVER_EVENT_LASER_1_ON"
     LASER_2_ON = "DRIVER_EVENT_LASER_2_ON"
     LASER_BOTH_ON = "DRIVER_EVENT_LASER_BOTH_ON"
@@ -479,6 +478,9 @@ class KMLProtocolEvent(BaseEnum):
     SET_PRESET =  "DRIVER_EVENT_SET_PRESET"
     GOTO_PRESET = "DRIVER_EVENT_GOTO_PRESET"
 
+    START_CAPTURING = 'DRIVER_EVENT_STARP_CAPTURE'
+    STOP_CAPTURING = 'DRIVER_EVENT_STOP_CAPTURE'
+
 
 class KMLCapability(BaseEnum):
     """
@@ -490,7 +492,7 @@ class KMLCapability(BaseEnum):
     ACQUIRE_STATUS = KMLProtocolEvent.ACQUIRE_STATUS
     ACQUIRE_SAMPLE = KMLProtocolEvent.ACQUIRE_SAMPLE
 
-    EXECUTE_AUTO_CAPTURE = KMLProtocolEvent.AUTO_CAPTURE
+    EXECUTE_AUTO_CAPTURE = KMLProtocolEvent.START_CAPTURINGE
 
     LASER_1_ON = KMLProtocolEvent.LASER_1_ON
     LASER_2_ON = KMLProtocolEvent.LASER_2_ON
@@ -499,12 +501,8 @@ class KMLCapability(BaseEnum):
     LASER_2_OFF = KMLProtocolEvent.LASER_2_OFF
     LASER_BOTH_OFF = KMLProtocolEvent.LASER_BOTH_OFF
 
-    LAMP_1_ON = KMLProtocolEvent.LAMP_1_ON
-    LAMP_2_ON = KMLProtocolEvent.LAMP_2_ON
-    LAMP_BOTH_ON = KMLProtocolEvent.LAMP_BOTH_ON
-    LAMP_1_OFF = KMLProtocolEvent.LAMP_1_OFF
-    LAMP_2_OFF = KMLProtocolEvent.LAMP_2_OFF
-    LAMP_BOTH_OFF = KMLProtocolEvent.LAMP_BOTH_OFF
+    LAMP_ON = KMLProtocolEvent.LAMP_ON
+    LAMP_OFF = KMLProtocolEvent.LAMP_OFF
 
     SET_PRESET = KMLProtocolEvent.SET_PRESET
     GOTO_PRESET = KMLProtocolEvent.GOTO_PRESET
@@ -556,6 +554,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         """
 
         self.last_wakeup = 0
+        self.video_fowarding_flag = False
 
         # Construct protocol superclass.
         CommandResponseInstrumentProtocol.__init__(self, prompts, newline, driver_event)
@@ -614,8 +613,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                                        self._handler_command_set_preset)
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.GOTO_PRESET,
                                        self._handler_command_goto_preset)
-        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.AUTO_CAPTURE,
-                                       self._handler_command_auto_capture)
+        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.START_CAPTURING,
+                                       self._handler_command_start_capture)
+        self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.STOP_CAPTURING,
+                                       self._handler_command_stop_capture)
 
 
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.ENTER,
@@ -665,8 +666,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._add_build_handler(KMLInstrumentCmds.SET, self._build_set_command)
         self._add_build_handler(KMLInstrumentCmds.GET, self._build_get_command)
 
-        self._add_build_handler(KMLInstrumentCmds.START_CAPTURE, self.build_simple_command)
-        self._add_build_handler(KMLInstrumentCmds.STOP_CAPTURE, self.build_simple_command)
+        self._add_build_handler(KMLInstrumentCmds.START_CAPTURE, self.build_start_capture_command)
+        self._add_build_handler(KMLInstrumentCmds.STOP_CAPTURE, self.build_stop_capture_command)
 
         self._add_build_handler(KMLInstrumentCmds.TAKE_SNAPSHOT, self.build_simple_command)
 
@@ -928,11 +929,17 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             cmds = self._get_params()
             results = ""
             for attr in sorted(cmds):
-                #if attr not in ['dict', 'has', 'list','GET_STATUS_INTERVAL', 'CLOCK_SYNCH_INTERVAL']:
-                if attr not in [ KMLParameter.SAMPLE_INTERVAL,KMLParameter.VIDEO_FORWARDING_TIMEOUT, KMLParameter.ACQUIRE_STATUS_INTERVAL]:
+                if attr not in [ KMLParameter.SAMPLE_INTERVAL, KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                                 KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLParameter.AUTO_CAPTURE_DURATION,
+                                 KMLParameter.VIDEO_FORWARDING, KMLParameter.PRESET_NUMBER]:
                     key = self._getattr_key(attr)
                     result = self._do_cmd_resp(KMLInstrumentCmds.GET, key, **kwargs)
                     results += result + NEWLINE
+
+            new_config = self._param_dict.get_config()
+
+            if not dict_equal(new_config, old_config):
+                self._driver_event(DriverAsyncEvent.CONFIG_CHANGE)
 
         # Catch all error so we can put ourselves back into
         # streaming.  Then rethrow the error
@@ -961,7 +968,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         log.trace("_set_params calling _verify_not_readonly ARGS = " + repr(args))
         self._verify_not_readonly(*args, **kwargs)
         for key, val in params.iteritems():
-            result = self._do_cmd_resp(KMLInstrumentCmds.SET, key, val, **kwargs)
+            if key not in [ KMLParameter.SAMPLE_INTERVAL,KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                                 KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLParameter.AUTO_CAPTURE_DURATION,
+                                 KMLParameter.VIDEO_FORWARDING, KMLParameter.PRESET_NUMBER]:
+                result = self._do_cmd_resp(KMLInstrumentCmds.SET, key, val, **kwargs)
         log.trace("_set_params calling _update_params")
         self._update_params()
         return result
@@ -1019,12 +1029,29 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # Superclass will query the state.
         self._driver_event(DriverAsyncEvent.STATE_CHANGE)
 
-        self.stop_scheduled_job(KMLScheduledJob.SNAPSHOT)
+        self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
+
+        status_interval = self._param_dict.get(KMLParameter.ACQUIRE_STATUS_INTERVAL)
+        if status_interval != ZERO_TIME_INTERVAL:
+            self.start_scheduled_job(KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLScheduledJob.STATUS,
+                                     KMLProtocolEvent.ACQUIRE_STATUS)
+
+        # start scheduled event for get_status only if the interval is not "00:00:00
+        self.video_fowarding_flag = self._param_dict.get(KMLParameter.VIDEO_FORWARDING)
+        #if(self.video_fowarding_flag):
+        #    # todo : Start video forwarding
+
+        self.forwarding_time = self._param_dict.get(KMLParameter.VIDEO_FORWARDING_TIMEOUT)
+
 
     def _handler_command_exit(self, *args, **kwargs):
         """
         Exit command state.
         """
+        self.stop_scheduled_job(KMLScheduledJob.STOP_CAPTURE)
+        self.stop_scheduled_job(KMLScheduledJob.STATUS)
+        self.stop_scheduled_job(KMLScheduledJob.STOP_CAPTURE)
+
         pass
 
     def _handler_unknown_enter(self, *args, **kwargs):
@@ -1081,15 +1108,15 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # start scheduled event for Sampling only if the interval is not "00:00:00
         sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL)
         if sample_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SNAPSHOT,
-                                     KMLProtocolEvent.ACQUIRE_STATUS)
+            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SAMPLE,
+                                     KMLProtocolEvent.ACQUIRE_SAMPLE)
 
 
     def _handler_autosample_exit(self, *args, **kwargs):
         """
         Exit autosample state.
         """
-        self.stop_scheduled_job(KMLScheduledJob.SNAPSHOT)
+        self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
 
     def _handler_autosample_init_params(self, *args, **kwargs):
         """
@@ -1129,24 +1156,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # start scheduled event for Sampling only if the interval is not "00:00:00
         sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL)
         if sample_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SNAPSHOT,
+            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SAMPLE,
                                      KMLProtocolEvent.ACQUIRE_STATUS)
 
         next_state = KMLProtocolState.AUTOSAMPLE
-        next_agent_state = ResourceAgentState.STREAMING
-
-        return next_state, (next_agent_state, result)
-
-    def _handler_command_start_capture(self, *args, **kwargs):
-        """
-        Switch into autosample mode.
-        @return next_state, (next_agent_state, result) if successful.
-        """
-        result = None
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
-        kwargs['timeout'] = 30
-
-        next_state = KMLProtocolState.CAPTURE
         next_agent_state = ResourceAgentState.STREAMING
 
         return next_state, (next_agent_state, result)
@@ -1305,6 +1318,20 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                     KMLParameter.VIDEO_FORWARDING)):
                 self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING,
                                            params[KMLParameter.VIDEO_FORWARDING])
+                changed = True
+
+        if KMLParameter.AUTO_CAPTURE_DURATION in params:
+            if (params[KMLParameter.AUTO_CAPTURE_DURATION] != self._param_dict.get(
+                    KMLParameter.AUTO_CAPTURE_DURATION)):
+                self._param_dict.set_value(KMLParameter.AUTO_CAPTURE_DURATION,
+                                           params[KMLParameter.AUTO_CAPTURE_DURATION])
+                changed = True
+
+        if KMLParameter.PRESET_NUMBER in params:
+            if (params[KMLParameter.PRESET_NUMBER] != self._param_dict.get(
+                    KMLParameter.PRESET_NUMBER)):
+                self._param_dict.set_value(KMLParameter.PRESET_NUMBER,
+                                           params[KMLParameter.PRESET_NUMBER])
                 changed = True
 
         if changed:
@@ -1534,6 +1561,55 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         return next_state, (None, None)
 
+    def _handler_command_start_capture (self, *args, **kwargs):
+
+        log.debug("IN _handler_command_start_capture")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        capturing_duration = self._param_dict.get(KMLParameter.AUTO_CAPTURE_DURATION)
+
+        if capturing_duration != ZERO_TIME_INTERVAL:
+            self.start_scheduled_job(KMLParameter.AUTO_CAPTURE_DURATION, KMLScheduledJob.STOP_CAPTURE,
+                                     KMLProtocolEvent.STOP_CAPTURING)
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.START_CAPTURE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        # update VIDEO_FORWARDING flag and update the change to the upstream
+        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING, True)
+        self._driver_event(DriverAsyncEvent.CONFIG_CHANGE)
+        self.video_fowarding_flag = True
+
+    def _handler_command_stop_capture (self, *args, **kwargs):
+
+        log.debug("IN _handler_command_stop_capture")
+        next_state = None
+
+        kwargs['timeout'] = 2
+        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+
+        self.stop_scheduled_job(KMLScheduledJob.STOP_CAPTURE)
+
+        try:
+            self._do_cmd_resp(KMLInstrumentCmds.STOP_CAPTURE, *args, **kwargs)
+
+        except Exception as e:
+            raise InstrumentParameterException(
+                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
+
+        # update VIDEO_FORWARDING flag and update the change to the upstream
+        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING, False)
+        self._driver_event(DriverAsyncEvent.CONFIG_CHANGE)
+        self.video_fowarding_flag = False
+
+
     def _handler_command_goto_preset(self, *args, **kwargs):
         """
         Take a snapshot
@@ -1561,69 +1637,6 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         except Exception as e:
             raise InstrumentParameterException(
                 'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        return next_state, (None, None)
-
-
-    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
-        """
-        Take a snapshot
-        """
-        log.debug("IN _handler_command_acquire_status")
-        next_state = None
-
-        kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
-
-        # Execute the following commands
-        #  GET_DISK_USAGE = 'GC'
-        #  HEALTH_REQUEST  = 'HS'
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        time.sleep(.5)
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-
-        return next_state, (None, None)
-
-    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
-        """
-        Take a snapshot
-        """
-        log.debug("IN _handler_command_acquire_status")
-        next_state = None
-
-        kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
-
-        # Execute the following commands
-        #  GET_DISK_USAGE = 'GC'
-        #  HEALTH_REQUEST  = 'HS'
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        time.sleep(.5)
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
 
         return next_state, (None, None)
 
@@ -1793,6 +1806,40 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             raise InstrumentParameterException('Unknown driver parameter. %s' % param)
 
         return set_cmd
+
+    def build_start_capture_command(self, cmd, param, val):
+        """
+        Build handler for set commands. param=val followed by newline.
+        String val constructed by param dict formatting function.
+        @param param the parameter key to set.
+        @param val the parameter value to set.
+        @return The set command to be sent to the device.
+        @throws InstrumentProtocolException if the parameter is not valid or
+        if the formatting function could not accept the value passed.
+        """
+
+        #self.get_param = param
+        self.get_cmd = cmd
+
+        command = '<\x03:%s:>' % cmd
+        return command
+
+    def build_stop_capture_command(self, cmd, param, val):
+        """
+        Build handler for set commands. param=val followed by newline.
+        String val constructed by param dict formatting function.
+        @param param the parameter key to set.
+        @param val the parameter value to set.
+        @return The set command to be sent to the device.
+        @throws InstrumentProtocolException if the parameter is not valid or
+        if the formatting function could not accept the value passed.
+        """
+
+        #self.get_param = param
+        self.get_cmd = cmd
+
+        command = '<\x03:%s:>' % cmd
+        return command
 
     def build_simple_command(self, cmd, param, val):
         """

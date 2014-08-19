@@ -309,6 +309,27 @@ class CAMDSProtocol(KMLProtocol):
         @returns a list of chunks identified, if any.
         The chunks are all the same type.
         """
+        """
+        Chunker sieve method to help the chunker identify chunks.
+        @returns a list of chunks identified, if any.
+        The chunks are all the same type.
+        """
+
+        sieve_matchers = [CAMDS_SNAPSHOT_MATCHER,
+                          CAMDS_DISK_STATUS_MATCHER,
+                          CAMDS_HEALTH_STATUS_MATCHER,
+                          CAMDS_START_CAPTURING,
+                          CAMDS_STOP_CAPTURING]
+
+        return_list = []
+
+        for matcher in sieve_matchers:
+
+            for match in matcher.finditer(raw_data):
+                return_list.append((match.start(), match.end()))
+
+        return return_list
+
 
     @staticmethod
     def sieve_function_stream(raw_data):
@@ -317,6 +338,8 @@ class CAMDSProtocol(KMLProtocol):
         @returns a list of chunks identified, if any.
         The chunks are all the same type.
         """
+        return_list = []
+        return return_list
 
     def __init__(self, prompts, newline, driver_event):
         """
@@ -429,7 +452,8 @@ class CAMDSProtocol(KMLProtocol):
         parsed_sample = particle.generate()
         parsed_sample._data_particle_type = DataParticleType.CAMDS_VIDEO
         if self._driver_event:
-            self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
+            if(self.video_fowarding_flag):
+                self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
 
     def _got_chunk_stream(self, chunk, timestamp):
         """
@@ -437,7 +461,7 @@ class CAMDSProtocol(KMLProtocol):
         Pass it to extract_sample with the appropriate particle
         objects and REGEXes.
         """
-
+        pass
         # The video stream will be sent through publish raw
 
     def _got_chunk(self, chunk, timestamp):
