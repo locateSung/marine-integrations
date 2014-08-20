@@ -373,30 +373,22 @@ class KMLInstrumentCmds(BaseEnum):
     START_CAPTURE = 'SP'
     STOP_CAPTURE = 'SR'
 
-    #GET_CAPTURE_STATUS = 'SS'
     TAKE_SNAPSHOT = 'CI'
 
     START_FOCUS_NEAR = 'FN'
     START_FOCUS_FAR = 'FF'
     STOP_FOCUS = 'FS'
-    #GET_FOCUS_POSITION = 'FP'
-    #SET_FOCUS_TO_GIVEN_POSITION = 'FG'
 
     START_ZOOM_OUT = 'ZW'
     START_ZOOM_IN = 'ZT'
     STOP_ZOOM ='ZS'
-    #GET_ZOOM_POSITION ='ZP'
-    #ZOOM_GIVEN_POSITION = 'ZG'
 
     INCREASE_IRIS = 'II'
     DECREASE_IRIS = 'ID'
-    #GET_IRIS = 'IP'
-    #SET_IRIS = 'IG'
 
     START_PAN_LEFT = 'PL'
     START_PAN_RIGHT = 'PR'
     STOP_PAN = 'PS'
-    #PAN_POSITION = 'PP'
 
     START_TILT_UP = 'TU'
     START_TILT_DOWN = 'TD'
@@ -492,7 +484,8 @@ class KMLCapability(BaseEnum):
     ACQUIRE_STATUS = KMLProtocolEvent.ACQUIRE_STATUS
     ACQUIRE_SAMPLE = KMLProtocolEvent.ACQUIRE_SAMPLE
 
-    EXECUTE_AUTO_CAPTURE = KMLProtocolEvent.START_CAPTURINGE
+    STOP_CAPTURE = KMLProtocolEvent.STOP_CAPTURING
+    START_CAPTURE = KMLProtocolEvent.START_CAPTURING
 
     LASER_1_ON = KMLProtocolEvent.LASER_1_ON
     LASER_2_ON = KMLProtocolEvent.LASER_2_ON
@@ -573,7 +566,6 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._protocol_fsm.add_handler(KMLProtocolState.UNKNOWN, KMLProtocolEvent.DISCOVER,
                                        self._handler_unknown_discover)
 
-
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.ENTER,
                                        self._handler_command_enter)
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.EXIT,
@@ -618,19 +610,47 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.STOP_CAPTURING,
                                        self._handler_command_stop_capture)
 
-
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.ENTER,
                                        self._handler_autosample_enter)
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.EXIT,
                                        self._handler_autosample_exit)
-        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.ACQUIRE_STATUS,
-                                       self._handler_command_acquire_status)
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.INIT_PARAMS,
                                        self._handler_autosample_init_params)
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.STOP_AUTOSAMPLE,
                                        self._handler_autosample_stop_autosample)
         self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.GET,
                                        self._handler_get)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.SET,
+                                       self._handler_command_set)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.ACQUIRE_STATUS,
+                                       self._handler_command_acquire_status)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.ACQUIRE_SAMPLE,
+                                       self._handler_command_acquire_sample)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LAMP_ON,
+                                       self._handler_command_lamp_on)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LAMP_OFF,
+                                       self._handler_command_lamp_off)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_1_ON,
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x01'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_2_ON,
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x02'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_BOTH_ON,
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_ON, '\x03'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_1_OFF,
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x01'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_2_OFF,
+                                       self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x02'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.LASER_BOTH_OFF,
+                                      self._handler_command_laser_wrapper(KMLInstrumentCmds.LASER_OFF, '\x03'))
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.SET_PRESET,
+                                       self._handler_command_set_preset)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.GOTO_PRESET,
+                                       self._handler_command_goto_preset)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.START_CAPTURING,
+                                       self._handler_command_start_capture)
+        self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.STOP_CAPTURING,
+                                       self._handler_command_stop_capture)
+
         self._protocol_fsm.add_handler(KMLProtocolState.DIRECT_ACCESS, KMLProtocolEvent.ENTER,
                                        self._handler_direct_access_enter)
         self._protocol_fsm.add_handler(KMLProtocolState.DIRECT_ACCESS, KMLProtocolEvent.EXIT,
@@ -640,22 +660,9 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._protocol_fsm.add_handler(KMLProtocolState.DIRECT_ACCESS, KMLProtocolEvent.STOP_DIRECT,
                                        self._handler_direct_access_stop_direct)
 
-        #Capture state
-        # self._protocol_fsm.add_handler(KMLProtocolState.COMMAND, KMLProtocolEvent.START_CAPTURE,
-        #                                self._handler_capture_start)
-        # self._protocol_fsm.add_handler(KMLProtocolState.AUTOSAMPLE, KMLProtocolEvent.START_CAPTURE,
-        #                                self._handler_capture_start)
-        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.ENTER,
-        #                                self._handler_capture_enter)
-        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.EXIT,
-        #                                self._handler_capture_exit)
-        # self._protocol_fsm.add_handler(KMLProtocolState.CAPTURE, KMLProtocolEvent.STOP_CAPTURE,
-        #                                self._handler_capture_stop)
-
-
         # Build dictionaries for driver schema
         self._build_param_dict()
-        #self._build_command_dict()
+        self._build_command_dict()
         self._build_driver_dict()
 
         ##################
@@ -1116,7 +1123,6 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         """
         Exit autosample state.
         """
-        self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
 
     def _handler_autosample_init_params(self, *args, **kwargs):
         """
@@ -1177,6 +1183,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         next_state = KMLProtocolState.COMMAND
         next_agent_state = ResourceAgentState.COMMAND
+
+        self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
 
         return next_state, (next_agent_state, result)
 

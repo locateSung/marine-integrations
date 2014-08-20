@@ -5,7 +5,6 @@
 @brief Driver for the CAMDS
 
 """
-from mi.core.common import Units, Prefixes
 from mi.core.common import BaseEnum
 import time
 from mi.instrument.KML.driver import KMLScheduledJob, parameterIndex
@@ -18,15 +17,13 @@ from mi.instrument.KML.driver import KMLInstrumentDriver
 from mi.instrument.KML.driver import KMLParameter
 from mi.core.instrument.instrument_driver import DriverProtocolState
 from mi.core.instrument.instrument_driver import DriverAsyncEvent
-from mi.core.instrument.instrument_driver import DriverConnectionState, DriverConfigKey
+from mi.core.instrument.instrument_driver import DriverConnectionState
 from mi.core.exceptions import InstrumentConnectionException
 from mi.core.exceptions import InstrumentParameterException
-from mi.core.exceptions import InstrumentTimeoutException
-from mi.core.exceptions import InstrumentProtocolException
-from mi.core.instrument.instrument_driver import ResourceAgentState
+
 from mi.core.instrument.instrument_driver import ResourceAgentEvent
 from mi.core.instrument.port_agent_client import PortAgentClient
-from mi.instrument.KML.particles import CAMDS_VIDEO, DataParticleType, CAMDS_SNAPSHOT_MATCHER, CAMDS_IMAGE_METADATA, \
+from mi.instrument.KML.particles import DataParticleType, CAMDS_SNAPSHOT_MATCHER, CAMDS_IMAGE_METADATA, \
     CAMDS_STOP_CAPTURING, CAMDS_START_CAPTURING
 from mi.core.instrument.data_particle import RawDataParticle
 
@@ -51,8 +48,6 @@ DEFAULT_CMD_TIMEOUT = 20
 DEFAULT_WRITE_DELAY = 0
 
 ZERO_TIME_INTERVAL = '00:00:00'
-# newline.
-NEWLINE = '\r\n'
 
 
 # ##############################################################################
@@ -67,6 +62,9 @@ class CAMDSConnections(BaseEnum):
     STREAM = 'Stream'
 
 class StreamPortAgentClient(PortAgentClient):
+    """
+    Wrap PortAgentClient for Video stream
+    """
     def __init__(self, host, port, cmd_port, delim=None):
         PortAgentClient.__init__(self, host, port, cmd_port, delim=None)
         self.info = "This is portAgentClient for Video Stream"
@@ -338,6 +336,8 @@ class CAMDSProtocol(KMLProtocol):
         @returns a list of chunks identified, if any.
         The chunks are all the same type.
         """
+
+        # It only generate raw stream type.
         return_list = []
         return return_list
 
@@ -352,12 +352,6 @@ class CAMDSProtocol(KMLProtocol):
         # Construct protocol superclass.
         KMLProtocol.__init__(self, prompts, newline, driver_event)
 
-        # self._add_build_handler(InstrumentCmds.SET2, self._build_set_command2)
-        # self._add_build_handler(InstrumentCmds.GET2, self._build_get_command)
-        #
-        # self._add_response_handler(InstrumentCmds.SET2, self._parse_set_response)
-        # self._add_response_handler(InstrumentCmds.GET2, self._parse_get_response2)
-
         self._connection = None
         self._connection_stream = None
 
@@ -368,10 +362,8 @@ class CAMDSProtocol(KMLProtocol):
         # mode.
         self._promptbuf_stream = ''
 
-        # The parameter, comamnd, and driver dictionaries.
-        # self._param_dict2 = ProtocolParameterDict()
-        # self._build_param_dict2()
-        self._chunker_stream = StringChunker(KMLProtocol.sieve_function_stream)
+        self._chunker = StringChunker(self.sieve_function)
+        self._chunker_stream = StringChunker(self.sieve_function_stream)
 
 
     def _build_command_dict(self):
@@ -383,8 +375,65 @@ class CAMDSProtocol(KMLProtocol):
                            display_name="Start Autosample",
                            description="Place the instrument into autosample mode")
         self._cmd_dict.add(KMLCapability.STOP_AUTOSAMPLE,
+                           timeout=300,
                            display_name="Stop Autosample",
                            description="Exit autosample mode and return to command mode")
+        self._cmd_dict.add(KMLCapability.START_CAPTURE,
+                           timeout=300,
+                           display_name="Start Capturing",
+                           description="Start capturing images")
+        self._cmd_dict.add(KMLCapability.STOP_CAPTURE,
+                           timeout=300,
+                           display_name="Stop Capturing",
+                           description="Stop capturing images")
+        self._cmd_dict.add(KMLCapability.ACQUIRE_STATUS,
+                           timeout=300,
+                           display_name="Acquire Status",
+                           description="Get disk usage and check health")
+        self._cmd_dict.add(KMLCapability.ACQUIRE_SAMPLE,
+                           timeout=300,
+                           display_name="Acquire Sample",
+                           description="Take a snapshot")
+        self._cmd_dict.add(KMLCapability.GOTO_PRESET,
+                           timeout=300,
+                           display_name="Goto Preset",
+                           description="Go to the preset number")
+        self._cmd_dict.add(KMLCapability.SET_PRESET,
+                           timeout=300,
+                           display_name="Set Preset",
+                           description="Set the preset number")
+        self._cmd_dict.add(KMLCapability.LAMP_OFF,
+                           timeout=300,
+                           display_name="lamp off",
+                           description="Turn off the lamp")
+        self._cmd_dict.add(KMLCapability.LAMP_ON,
+                           timeout=300,
+                           display_name="lamp on",
+                           description="Turn on the lamp")
+        self._cmd_dict.add(KMLCapability.LASER_1_OFF,
+                           timeout=300,
+                           display_name="Laser 1  off",
+                           description="Turn off the laser #1")
+        self._cmd_dict.add(KMLCapability.LASER_2_OFF,
+                           timeout=300,
+                           display_name="Laser 2 off",
+                           description="Turn off the laser #2")
+        self._cmd_dict.add(KMLCapability.LASER_BOTH_OFF,
+                           timeout=300,
+                           display_name="Laser off",
+                           description="Turn off the all laser")
+        self._cmd_dict.add(KMLCapability.LASER_1_ON,
+                           timeout=300,
+                           display_name="Laser 1  on",
+                           description="Turn on the laser #1")
+        self._cmd_dict.add(KMLCapability.LASER_2_ON,
+                           timeout=300,
+                           display_name="Laser 2 on",
+                           description="Turn on the laser #2")
+        self._cmd_dict.add(KMLCapability.LASER_BOTH_ON,
+                           timeout=300,
+                           display_name="Laser on",
+                           description="Turn on the all laser")
 
     # #######################################################################
     # Private helpers.
@@ -500,8 +549,6 @@ class CAMDSProtocol(KMLProtocol):
                                    chunk,
                                    timestamp)):
             log.debug("_got_chunk - successful match for CAMDS_IMAGE_METADATA(Stop Capturing")
-        #self.portAgent_timestamp = timestamp
-
 
     def _get_params(self):
         return dir(KMLParameter)
@@ -512,11 +559,6 @@ class CAMDSProtocol(KMLProtocol):
     def _has_parameter(self, param):
         return KMLParameter.has(param)
 
-    # def _send_break_cmd(self, delay):
-    #     """
-    #     Send a BREAK to attempt to wake the device.
-    #     """
-    #     self._connection.send_break(delay)
 
 class Prompt(KMLPrompt):
     """
@@ -880,7 +922,6 @@ class Protocol(CAMDSProtocol):
                              startup_param=True,
                              direct_access=False,
                              default_value=Parameter.AUTO_CAPTURE_DURATION[parameterIndex.DEFAULT_DATA])
-
 
         self._param_dict.set_default(Parameter.SAMPLE_INTERVAL)
         self._param_dict.set_default(Parameter.ACQUIRE_STATUS_INTERVAL)

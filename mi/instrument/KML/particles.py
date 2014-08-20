@@ -22,7 +22,6 @@ from mi.core.instrument.data_particle import CommonDataParticleType
 #
 # Particle Regex's'
 #
-CAMDS_RESPONSE = r'.*\n<::>'
 CAMDS_DISK_STATUS_MATCHER = r'<\x0B:\x06:GC[\0-\xFF]+>'
 CAMDS_HEALTH_STATUS_MATCHER = r'<\x07:\x06:HS[\0-\xFF]+>'
 CAMDS_SNAPSHOT_MATCHER = r'<\x04:\x06:CI>'
@@ -46,14 +45,19 @@ class DataParticleType(BaseEnum):
 
 # keys for video stream
 class CAMDS_VIDEO_KEY(BaseEnum):
+    """
+    Video stream data key
+    """
     CAMDS_VIDEO_BINARY = "raw"
 
 # Data particle for PT4 command
 class CAMDS_VIDEO(DataParticle):
+    """
+    CAMDS video stream data particle
+    """
     _data_particle_type = DataParticleType.CAMDS_VIDEO
 
     def _build_parsed_values(self):
-
         result = []
         result.append({DataParticleKey.VALUE_ID: CAMDS_VIDEO_KEY.CAMDS_VIDEO_BINARY,
                        DataParticleKey.VALUE: self.raw_data})
@@ -62,12 +66,18 @@ class CAMDS_VIDEO(DataParticle):
 
 # HS command
 class CAMDS_HEALTH_STATUS_KEY(BaseEnum):
+    """
+    CAMDS health status keys
+    """
     temp = "camds_temp"
     humidity = "camds_humidity"
     error = "camds_error"
 
 # Data particle for HS command
 class CAMDS_HEALTH_STATUS(DataParticle):
+    """
+    CAMDS health status data particle
+    """
     _data_particle_type = DataParticleType.CAMDS_HEALTH_STATUS
 
     def build_data_particle(self, temp = None, humidity = None,
@@ -125,6 +135,9 @@ class CAMDS_HEALTH_STATUS(DataParticle):
 
 # GC command
 class CAMDS_DISK_STATUS_KEY(BaseEnum):
+    """
+    CAMDS disk status keys
+    """
     size = "camds_disc_size"
     disk_remaining = "camds_disc_remaining"
     image_remaining = "camds_images_remaining"
@@ -132,6 +145,7 @@ class CAMDS_DISK_STATUS_KEY(BaseEnum):
 
 # Data particle for GC command
 class CAMDS_DISK_STATUS(DataParticle):
+    "CAMDS disk status data particle"
     _data_particle_type = DataParticleType.CAMDS_DISK_STATUS
 
     def build_data_particle(self, size = None, disk_remaining = None,
@@ -169,9 +183,6 @@ class CAMDS_DISK_STATUS(DataParticle):
 
 
     def _build_parsed_values(self):
-        # Initialize
-
-        ################
         resopnse_striped = '%r' % self.raw_data.strip()
         #check the size of the response
         if len(resopnse_striped) != 12:
@@ -209,6 +220,9 @@ class CAMDS_DISK_STATUS(DataParticle):
 
 #CAMDS meta data data particle
 class CAMDS_IMAGE_METADATA_KEY(BaseEnum):
+    """
+    CAMDS image meta data keys
+    """
 
     PAN_POSITION = "camds_pan_position"
     TILT_POSITION = "camds_tilt_position"
@@ -221,6 +235,9 @@ class CAMDS_IMAGE_METADATA_KEY(BaseEnum):
 
 # Data particle for GC command
 class CAMDS_IMAGE_METADATA(DataParticle):
+    """
+    CAMDS image data particle
+    """
     _data_particle_type = DataParticleType.CAMDS_IMAGE_METADATA
 
     def _build_parsed_values(self):
@@ -232,25 +249,25 @@ class CAMDS_IMAGE_METADATA(DataParticle):
             if key == KMLParameter.PAN_POSITION:
                 result.append({DataParticleKey.VALUE_ID: "camds_pan_position",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.TILT_POSITION:
+            elif key == KMLParameter.TILT_POSITION:
                 result.append({DataParticleKey.VALUE_ID: "camds_tilt_position",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.FOCUS_POSITION:
+            elif key == KMLParameter.FOCUS_POSITION:
                 result.append({DataParticleKey.VALUE_ID: "camds_focus_position",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.ZOOM_POSITION:
+            elif key == KMLParameter.ZOOM_POSITION:
                 result.append({DataParticleKey.VALUE_ID: "camds_zoom_position",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.IRIS_POSITION:
+            elif key == KMLParameter.IRIS_POSITION:
                 result.append({DataParticleKey.VALUE_ID: "camds_iris_position",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.CAMERA_GAIN:
+            elif key == KMLParameter.CAMERA_GAIN:
                 result.append({DataParticleKey.VALUE_ID: "camds_gain",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.IMAGE_RESOLUTION:
+            elif key == KMLParameter.IMAGE_RESOLUTION:
                 result.append({DataParticleKey.VALUE_ID: "camds_resolution",
                            DataParticleKey.VALUE: value})
-            if key == KMLParameter.LAMP_BRIGHTNESS:
+            elif key == KMLParameter.LAMP_BRIGHTNESS:
                 result.append({DataParticleKey.VALUE_ID: "camds_brightness",
                            DataParticleKey.VALUE: value})
 
