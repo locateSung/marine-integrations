@@ -6,7 +6,8 @@
 Release notes:
 """
 import struct
-from mi.instrument.KML.driver import KMLParameter
+import re
+from mi.instrument.kml.driver import KMLParameter
 
 __author__ = 'Sung Ahn'
 __license__ = 'Apache 2.0'
@@ -22,11 +23,16 @@ from mi.core.instrument.data_particle import CommonDataParticleType
 #
 # Particle Regex's'
 #
-CAMDS_DISK_STATUS_MATCHER = r'<\x0B:\x06:GC[\0-\xFF]+>'
-CAMDS_HEALTH_STATUS_MATCHER = r'<\x07:\x06:HS[\0-\xFF]+>'
+CAMDS_DISK_STATUS_MATCHER = r'<\x0B:\x06:GC.+?>'
+CAMDS_DISK_STATUS_MATCHER_COM =  re.compile(CAMDS_DISK_STATUS_MATCHER, re.DOTALL)
+CAMDS_HEALTH_STATUS_MATCHER = r'<\x07:\x06:HS.+?>'
+CAMDS_HEALTH_STATUS_MATCHER_COM =  re.compile(CAMDS_HEALTH_STATUS_MATCHER, re.DOTALL)
 CAMDS_SNAPSHOT_MATCHER = r'<\x04:\x06:CI>'
+CAMDS_SNAPSHOT_MATCHER_COM =  re.compile(CAMDS_SNAPSHOT_MATCHER, re.DOTALL)
 CAMDS_START_CAPTURING = r'<\x04:\x06:SP>'
+CAMDS_START_CAPTURING_COM =  re.compile(CAMDS_START_CAPTURING, re.DOTALL)
 CAMDS_STOP_CAPTURING = r'<\x04:\x06:SR>'
+CAMDS_STOP_CAPTURING_COM =  re.compile(CAMDS_STOP_CAPTURING, re.DOTALL)
 
 
 # ##############################################################################
@@ -53,7 +59,7 @@ class CAMDS_VIDEO_KEY(BaseEnum):
 # Data particle for PT4 command
 class CAMDS_VIDEO(DataParticle):
     """
-    CAMDS video stream data particle
+    cam video stream data particle
     """
     _data_particle_type = DataParticleType.CAMDS_VIDEO
 
@@ -67,7 +73,7 @@ class CAMDS_VIDEO(DataParticle):
 # HS command
 class CAMDS_HEALTH_STATUS_KEY(BaseEnum):
     """
-    CAMDS health status keys
+    cam health status keys
     """
     temp = "camds_temp"
     humidity = "camds_humidity"
@@ -76,7 +82,7 @@ class CAMDS_HEALTH_STATUS_KEY(BaseEnum):
 # Data particle for HS command
 class CAMDS_HEALTH_STATUS(DataParticle):
     """
-    CAMDS health status data particle
+    cam health status data particle
     """
     _data_particle_type = DataParticleType.CAMDS_HEALTH_STATUS
 
@@ -108,10 +114,13 @@ class CAMDS_HEALTH_STATUS(DataParticle):
 
     def _build_parsed_values(self):
 
-        resopnse_striped = '%r' % self.raw_data.strip()
+        print("Sung %s", self.raw_data)
+        #resopnse_striped = '%r' % self.raw_data.strip()
+        resopnse_striped = self.raw_data
+        print("Sung2 %s", resopnse_striped)
         #check the size of the response
-        if len(resopnse_striped) != 7:
-            log.error("Disk status size should be 12 %r" +  resopnse_striped)
+        if len(resopnse_striped) != 11:
+            log.error("Disk status size should be 11 %r" +  resopnse_striped)
             return
         if resopnse_striped[0] != '<':
             log.error("Disk status is not correctly formated %r" +  resopnse_striped)
@@ -136,7 +145,7 @@ class CAMDS_HEALTH_STATUS(DataParticle):
 # GC command
 class CAMDS_DISK_STATUS_KEY(BaseEnum):
     """
-    CAMDS disk status keys
+    cam disk status keys
     """
     size = "camds_disc_size"
     disk_remaining = "camds_disc_remaining"
@@ -145,7 +154,7 @@ class CAMDS_DISK_STATUS_KEY(BaseEnum):
 
 # Data particle for GC command
 class CAMDS_DISK_STATUS(DataParticle):
-    "CAMDS disk status data particle"
+    "cam disk status data particle"
     _data_particle_type = DataParticleType.CAMDS_DISK_STATUS
 
     def build_data_particle(self, size = None, disk_remaining = None,
@@ -183,10 +192,11 @@ class CAMDS_DISK_STATUS(DataParticle):
 
 
     def _build_parsed_values(self):
-        resopnse_striped = '%r' % self.raw_data.strip()
+        #resopnse_striped = '%r' % self.raw_data.strip()
+        resopnse_striped = self.raw_data.strip()
         #check the size of the response
-        if len(resopnse_striped) != 12:
-            log.error("Disk status size should be 12 %r" +  resopnse_striped)
+        if len(resopnse_striped) != 15:
+            log.error("Disk status size should be 15 %r" +  resopnse_striped)
             return
         if resopnse_striped[0] != '<':
             log.error("Disk status is not correctly formated %r" +  resopnse_striped)
@@ -196,15 +206,18 @@ class CAMDS_DISK_STATUS(DataParticle):
             return
 
         int_bytes = bytearray(resopnse_striped)
+
         byte1 = int_bytes[7]
         byte2 = int_bytes[8]
         byte3 = int_bytes[9]
+        print('Sung bytes %r'% int_bytes )
 
         available_disk = byte1 * pow(10, byte2)
         available_disk_percent = byte3
-        temp = struct.pack('!h', resopnse_striped[9] + resopnse_striped[10])
+
+        temp = struct.unpack('!h', resopnse_striped[10] + resopnse_striped[11])
         images_remaining = temp[0]
-        temp = struct.pack('!h', resopnse_striped[11] + resopnse_striped[12])
+        temp = struct.unpack('!h', resopnse_striped[12] + resopnse_striped[13])
         images_on_disk = temp[0]
 
         sample = CAMDS_DISK_STATUS(resopnse_striped)
@@ -218,10 +231,10 @@ class CAMDS_DISK_STATUS(DataParticle):
         return parsed_sample
 
 
-#CAMDS meta data data particle
+#cam meta data data particle
 class CAMDS_IMAGE_METADATA_KEY(BaseEnum):
     """
-    CAMDS image meta data keys
+    cam image meta data keys
     """
 
     PAN_POSITION = "camds_pan_position"
@@ -236,7 +249,7 @@ class CAMDS_IMAGE_METADATA_KEY(BaseEnum):
 # Data particle for GC command
 class CAMDS_IMAGE_METADATA(DataParticle):
     """
-    CAMDS image data particle
+    cam image data particle
     """
     _data_particle_type = DataParticleType.CAMDS_IMAGE_METADATA
 

@@ -1374,6 +1374,7 @@ class Protocol(WorkhorseProtocol):
         log.trace("_set_params 2 calling _verify_not_readonly ARGS = " + repr(args))
         self._verify_not_readonly2(*args, **kwargs)
         for (key, val) in params.iteritems():
+
             if key.find('_') != -1:  # Found
                 if key not in [TeledyneParameter.CLOCK_SYNCH_INTERVAL, TeledyneParameter.GET_STATUS_INTERVAL]:
                     key_split = key.split('_', 1)

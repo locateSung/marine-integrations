@@ -99,7 +99,7 @@ class InstrumentFSM(object):
 
         next_state = None
         result = None
-
+        log.error("Sung on event")
         if self.events.has(event):
             handler = self.state_handlers.get((self.current_state, event), None)
             if handler:
@@ -172,7 +172,7 @@ class ThreadSafeFSM(InstrumentFSM):
     def on_event(self, event, *args, **kwargs):
         """
         """
-        
+        log.error("Sung on_event %s", event)
         self._lock.acquire(True)
         ex = None
         

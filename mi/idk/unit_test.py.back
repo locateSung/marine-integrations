@@ -222,11 +222,10 @@ class InstrumentDriverTestConfig(Singleton):
             buffer = ""
             if dict is None or 0 == len(dict):
                 return "%s: {}," % ".".join(prefix)
-            print ('Sung1 %r' % repr(dict))
+
             newprefix = prefix[:]
 
             for k, v in dict.iteritems():
-                #print ('Sung key %s %s' % k,repr(v))
                 if type(v) == type({}):
                     buffer += helper(newprefix + [k], v)
                 elif type(v) == type([]):
@@ -235,7 +234,6 @@ class InstrumentDriverTestConfig(Singleton):
                     buffer += "%s: []," % ".".join(newprefix)
                 else:
                     newprefix.append(k)
-                    print ('Sung123 %r' % v)
                     buffer += "%s: %s," % (".".join(newprefix), v)
 
             return buffer
@@ -302,6 +300,7 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
         @param param_dict dict with parameter names and types
         @param verify_values bool should ve verify parameter values
         """
+        log.error("****SUNG assert_data_particle_parameters")
         sample_dict = self.get_data_particle_values_as_dict(data_particle)
         self.assert_parameters(sample_dict, param_dict, verify_values)
 
@@ -466,7 +465,7 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
 
         # get all the sample parameter names
         sample_keys = sample_values.keys()
-        log.info("Sample Keys: %s", sample_keys)
+        log.error("Sample Keys: %s", sample_keys)
 
         # split the parameters into optional and required
         for key, param in param_dict.items():
@@ -479,11 +478,14 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
             else:
                 required_keys.append(key)
 
-        log.info("Required Keys: %s", required_keys)
-        log.info("Optional Keys: %s", optional_keys)
+        log.error("Required Keys: %s", required_keys)
+        log.error("Optional Keys: %s", optional_keys)
 
         # Lets verify all required parameters are there
         for required in required_keys:
+            #log.debug("Sung: " + str(required))
+            #log.debug("Sung: required "  + repr(required_keys))
+            #log.debug("Sung:  sample "  + repr(sample_keys))
             self.assertTrue(required in sample_keys, msg="particle missing parameter '%s', a required key" % required)
             sample_keys.remove(required)
 
@@ -492,7 +494,7 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
             if optional in sample_keys:
                 sample_keys.remove(optional)
 
-        log.info("Unknown Keys: %s", sample_keys)
+        log.error("Unknown Keys: %s", sample_keys)
 
         # If there is anything left in the sample keys then it's a problem
         self.assertEqual(len(sample_keys), 0)
@@ -534,7 +536,6 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
         """
         for (param_name, param_value) in sample_values.items():
             log.debug("Data Particle Parameter (%s): %s", param_name, type(param_value))
-
             # get the parameter type
             param_def = param_dict.get(param_name)
             self.assertIsNotNone(param_def)
@@ -577,15 +578,11 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
         """
         # This has to come from the protocol so None is returned until we
         # initialize
-        print ('Sung assert initialize driver')
         self.assert_initialize_driver(driver)
-        print ('Sung calling driver.get_config_metadata()')
         config_json = driver.get_config_metadata()
-        print ('Sung config json %r' % repr(config_json))
         self.assertIsNotNone(config_json)
         config = json.loads(config_json)
 
-        print ('Sung config %r' % repr(config))
         pp = PrettyPrinter()
         log.debug("Config: %s", pp.pformat(config))
 
@@ -613,7 +610,7 @@ class DriverTestMixin(MiUnitTest, ParticleTestMixin):
             expected_parameter = parameters.get(key)
             self.assertIsNotNone(config_parameter)
             self.assertIsNotNone(expected_parameter)
-
+            log.error("Sung verify driver parameter %s::: %s::: %s", key, config_parameter, expected_parameter)
             self.assert_schema_parameter_type(key, config_parameter, expected_parameter)
             self.assert_schema_parameter_read_only(key, config_parameter, expected_parameter)
             self.assert_schema_parameter_metadata(key, config_parameter)
@@ -1111,13 +1108,10 @@ class InstrumentDriverTestCase(MiIntTestCase):
         """
         # use assertTrue here intentionally because it's easier to unit test
         # this method.
-        print("Sung subset%r" % subset)
-        print("Sung superset%r" % superset)
         if len(superset):
             self.assertTrue(len(subset) > 0)
 
         for item in subset:
-            print("Sung item %r" % item)
             self.assertTrue(item in superset)
 
             # This added so the unit test can set a true flag.  If we have made it
@@ -1419,11 +1413,13 @@ class InstrumentDriverUnitTestCase(InstrumentDriverTestCase):
         for p in self._data_particle_received:
             particle_dict = json.loads(p)
             stream_type = particle_dict.get('stream_name')
+            log.error("Sung stream name: %s ", stream_type)
             self.assertIsNotNone(stream_type)
             if stream_type != CommonDataParticleType.RAW:
                 particles.append(p)
 
         log.debug("Non raw particles: %s ", particles)
+        log.error("Sung Non raw particles: %r ", particles)
         self.assertEqual(len(particles), 1)
 
         # Verify the data particle
@@ -1480,6 +1476,9 @@ class InstrumentDriverUnitTestCase(InstrumentDriverTestCase):
         log.debug("All Reported Capabilities: %s", all_capabilities)
         log.debug("All Expected Capabilities: %s", expected_capabilities)
 
+        log.error("Sung All Reported Capabilities: %s", all_capabilities)
+        log.error("Sung All Expected Capabilities: %s", expected_capabilities)
+
         self.assertEqual(all_capabilities, expected_capabilities)
 
     def assert_state_capabilities(self, driver, capabilities):
@@ -1501,6 +1500,10 @@ class InstrumentDriverUnitTestCase(InstrumentDriverTestCase):
             log.debug("Current Driver State: %s", state)
             log.debug("Expected Capabilities: %s", expected_capabilities)
             log.debug("Reported Capabilities: %s", reported_capabilities)
+
+            log.error("Sung -- Current Driver State: %s", state)
+            log.error("Sung -- Expected Capabilities: %s", expected_capabilities)
+            log.error("Sung ---Reported Capabilities: %s", reported_capabilities)
 
             self.assertEqual(reported_capabilities, expected_capabilities)
 
@@ -2643,10 +2646,12 @@ class InstrumentDriverQualificationTestCase(InstrumentDriverTestCase):
         #if session_timeout != None: args['session_timeout'] = session_timeout
 
         log.debug("DA startup parameters: %s", args)
+        log.error("Sung DA startup parameters: %s", args)
 
         cmd = AgentCommand(command=ResourceAgentEvent.GO_DIRECT_ACCESS, kwargs=args)
         retval = self.instrument_agent_client.execute_agent(cmd, timeout=timeout)
         log.warn("go_direct_access retval=" + str(retval.result))
+        log.error("Sung go_direct_access retval=" + str(retval.result))
 
         state = self.instrument_agent_client.get_agent_state()
         self.assertEqual(state, ResourceAgentState.DIRECT_ACCESS)

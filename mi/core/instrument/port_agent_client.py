@@ -284,7 +284,8 @@ class PortAgentClient(object):
         Initialize client comms with the logger process and start a
         listener thread.
         """
-        
+
+        log.error("Sung init comms")
         try:
             self._destroy_connection()
             self._create_connection()
@@ -364,7 +365,8 @@ class PortAgentClient(object):
                    listener_callback_error = None,
                    user_callback_error = None, heartbeat = 0,
                    max_missed_heartbeats = None, start_listener = True):
-        
+
+        log.error("Sung port agent client init comms")
         self.user_callback_data = user_callback_data        
         self.user_callback_raw = user_callback_raw
         self.listener_callback_error = listener_callback_error
@@ -372,11 +374,13 @@ class PortAgentClient(object):
         self.heartbeat = heartbeat
         self.max_missed_heartbeats = max_missed_heartbeats
         self.start_listener = start_listener 
-
+        log.error("Sung port agent client init comms before init comm")
         if  False == self._init_comms():
             error_string = ' port_agent_client private _init_comms failed.'
             log.error(error_string)
+            log.error("Sung port agent client init raise exception")
             raise InstrumentConnectionException(error_string)
+        log.error("Sung port agent client init comms before init comm2")
 
     def stop_comms(self):
         """

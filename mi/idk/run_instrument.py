@@ -250,7 +250,7 @@ class RunInstrument(MiIntTestCase):
             'process_type': PortAgentProcessType.UNIX,
             'log_level': 5,
         }
-
+        log.error("Sung start_pagent %r",self._port_config )
         self._pagent = PortAgentProcess.launch_process(config, timeout = 60, test_mode = True)
         pid = self._pagent.get_pid()
         port = self._pagent.get_data_port()

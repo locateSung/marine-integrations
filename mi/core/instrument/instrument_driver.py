@@ -607,8 +607,9 @@ class SingleConnectionInstrumentDriver(InstrumentDriver):
         # information.
         if not protocol:
             self._build_protocol()
-
+        print ('Sung Hello %r' % self._protocol.get_config_metadata_dict())
         log.debug("Getting metadata from protocol...")
+        aa = unicode(self._protocol.get_config_metadata_dict(), )
         return json.dumps(self._protocol.get_config_metadata_dict(),
                           sort_keys=True)
             
