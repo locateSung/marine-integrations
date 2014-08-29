@@ -6,11 +6,13 @@
 Release notes:
 
 """
+from mi.core.instrument.data_particle import RawDataParticle
 
 __author__ = 'Sung Ahn'
 __license__ = 'Apache 2.0'
 
 import copy
+import base64
 import datetime as dt
 from nose.plugins.attrib import attr
 from mock import Mock
@@ -28,7 +30,8 @@ from mi.instrument.kml.cam.test.test_driver import CAMDriverUnitTest
 from mi.instrument.kml.cam.test.test_driver import CAMDriverIntegrationTest
 from mi.instrument.kml.cam.test.test_driver import CAMDriverQualificationTest
 from mi.instrument.kml.cam.test.test_driver import CAMDriverPublicationTest
-from mi.instrument.kml.particles import DataParticleType, CAMDS_DISK_STATUS_KEY, CAMDS_HEALTH_STATUS_KEY
+from mi.instrument.kml.particles import DataParticleType, CAMDS_DISK_STATUS_KEY, CAMDS_HEALTH_STATUS_KEY, CAMDS_VIDEO,\
+                                        CAMDS_VIDEO_KEY
 
 # from mi.instrument.teledyne.workhorse.test.test_data import RSN_SAMPLE_RAW_DATA, rsn_cali_raw_data_string
 # from mi.instrument.teledyne.workhorse.test.test_data import RSN_PS0_RAW_DATA
@@ -303,386 +306,93 @@ class ADCPTMixin(DriverTestMixin):
         KMLCapability.ACQUIRE_SAMPLE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
     }
 
-    # EF_CHAR = '\xef'
-    #
-    # _calibration_data_parameters = {
-    #     ADCP_COMPASS_CALIBRATION_KEY.FLUXGATE_CALIBRATION_TIMESTAMP: {'type': float, 'value': 1347639932.0},
-    #     ADCP_COMPASS_CALIBRATION_KEY.S_INVERSE_BX: {'type': list, 'value': [0.39218, 0.3966, -0.031681, 0.0064332]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.S_INVERSE_BY: {'type': list, 'value': [-0.02432, -0.010376, -0.0022428, -0.60628]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.S_INVERSE_BZ: {'type': list, 'value': [0.22453, -0.21972, -0.2799, -0.0024339]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.S_INVERSE_ERR: {'type': list, 'value': [0.46514, -0.40455, 0.69083, -0.014291]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.COIL_OFFSET: {'type': list, 'value': [34233.0, 34449.0, 34389.0, 34698.0]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.ELECTRICAL_NULL: {'type': float, 'value': 34285.0},
-    #     ADCP_COMPASS_CALIBRATION_KEY.TILT_CALIBRATION_TIMESTAMP: {'type': float, 'value': 1347639285.0},
-    #     ADCP_COMPASS_CALIBRATION_KEY.CALIBRATION_TEMP: {'type': float, 'value': 24.4},
-    #     ADCP_COMPASS_CALIBRATION_KEY.ROLL_UP_DOWN: {'type': list,
-    #                                                 'value': [7.4612e-07, -3.1727e-05, -3.0054e-07, 3.219e-05]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.PITCH_UP_DOWN: {'type': list,
-    #                                                  'value': [-3.1639e-05, -6.3505e-07, -3.1965e-05, -1.4881e-07]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.OFFSET_UP_DOWN: {'type': list, 'value': [32808.0, 32568.0, 32279.0, 33047.0]},
-    #     ADCP_COMPASS_CALIBRATION_KEY.TILT_NULL: {'type': float, 'value': 33500.0}
-    # }
-    #
-    # _system_configuration_data_parameters = {
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.SERIAL_NUMBER: {'type': unicode, 'value': "18444"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.TRANSDUCER_FREQUENCY: {'type': int, 'value': 76800},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.CONFIGURATION: {'type': unicode, 'value': "4 BEAM, JANUS"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.MATCH_LAYER: {'type': unicode, 'value': "10"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BEAM_ANGLE: {'type': int, 'value': 20},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BEAM_PATTERN: {'type': unicode, 'value': "CONVEX"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.ORIENTATION: {'type': unicode, 'value': "UP"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.SENSORS: {'type': unicode,
-    #                                             'value': "HEADING  TILT 1  TILT 2  DEPTH  TEMPERATURE  PRESSURE"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c3: {'type': float, 'value': -1.927850E-11},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c2: {'type': float, 'value': +1.281892E-06},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c1: {'type': float, 'value': +1.375793E+00},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_OFFSET: {'type': float, 'value': 13.38634},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.TEMPERATURE_SENSOR_OFFSET: {'type': float, 'value': -0.01},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.CPU_FIRMWARE: {'type': unicode, 'value': "50.40 [0]"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOOT_CODE_REQUIRED: {'type': unicode, 'value': "1.16"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOOT_CODE_ACTUAL: {'type': unicode, 'value': "1.16"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_1_VERSION: {'type': unicode, 'value': "ad48"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_1_TYPE: {'type': unicode, 'value': "1f"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_2_VERSION: {'type': unicode, 'value': "ad48"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_2_TYPE: {'type': unicode, 'value': "1f"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.POWER_TIMING_VERSION: {'type': unicode, 'value': "85d3"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.POWER_TIMING_TYPE: {'type': unicode, 'value': "7"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOARD_SERIAL_NUMBERS: {'type': unicode,
-    #                                                          'value': u"72  00 00 06 FE BC D8  09 HPA727-3009-00B \n" +
-    #                                                                   "81  00 00 06 F5 CD 9E  09 REC727-1004-06A\n" +
-    #                                                                   "A5  00 00 06 FF 1C 79  09 HPI727-3007-00A\n" +
-    #                                                                   "82  00 00 06 FF 23 E5  09 CPU727-2011-00E\n" +
-    #                                                                   "07  00 00 06 F6 05 15  09 TUN727-1005-06A\n" +
-    #                                                                   "DB  00 00 06 F5 CB 5D  09 DSP727-2001-06H"}
-    # }
-    #
-    # _system_configuration_data_parameters_VADCP = {
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.SERIAL_NUMBER: {'type': unicode, 'value': "18444"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.TRANSDUCER_FREQUENCY: {'type': int, 'value': 76800},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.CONFIGURATION: {'type': unicode, 'value': "4 BEAM, JANUS"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.MATCH_LAYER: {'type': unicode, 'value': "10"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BEAM_ANGLE: {'type': int, 'value': 20},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BEAM_PATTERN: {'type': unicode, 'value': "CONVEX"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.ORIENTATION: {'type': unicode, 'value': "UP"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.SENSORS: {'type': unicode,
-    #                                             'value': "HEADING  TILT 1  TILT 2  DEPTH  TEMPERATURE  PRESSURE"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c3: {'type': float, 'value': -1.927850E-11},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c2: {'type': float, 'value': +1.281892E-06},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_c1: {'type': float, 'value': +1.375793E+00},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.PRESSURE_COEFF_OFFSET: {'type': float, 'value': 13.38634},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.TEMPERATURE_SENSOR_OFFSET: {'type': float, 'value': -0.01},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.CPU_FIRMWARE: {'type': unicode, 'value': "50.40 [0]"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOOT_CODE_REQUIRED: {'type': unicode, 'value': "1.16"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOOT_CODE_ACTUAL: {'type': unicode, 'value': "1.16"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_1_VERSION: {'type': unicode, 'value': "ad48"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_1_TYPE: {'type': unicode, 'value': "1f"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_2_VERSION: {'type': unicode, 'value': "ad48"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.DEMOD_2_TYPE: {'type': unicode, 'value': "1f"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.POWER_TIMING_VERSION: {'type': unicode, 'value': "85d3"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.POWER_TIMING_TYPE: {'type': unicode, 'value': "7"},
-    #     ADCP_SYSTEM_CONFIGURATION_KEY.BOARD_SERIAL_NUMBERS: {'type': unicode,
-    #                                                          'value': u"72  00 00 06 FE BC D8  09 HPA727-3009-00B \n" +
-    #                                                                   "81  00 00 06 F5 CD 9E  09 REC727-1004-06A\n" +
-    #                                                                   "A5  00 00 06 FF 1C 79  09 HPI727-3007-00A\n" +
-    #                                                                   "82  00 00 06 FF 23 E5  09 CPU727-2011-00E\n"}
-    # }
-    #
-    # _pd0_parameters_base = {
-    #     ADCP_PD0_PARSED_KEY.HEADER_ID: {'type': int, 'value': 127},
-    #     ADCP_PD0_PARSED_KEY.DATA_SOURCE_ID: {'type': int, 'value': 127},
-    #     ADCP_PD0_PARSED_KEY.NUM_BYTES: {'type': int, 'value': 26632},
-    #     ADCP_PD0_PARSED_KEY.NUM_DATA_TYPES: {'type': int, 'value': 6},
-    #     ADCP_PD0_PARSED_KEY.OFFSET_DATA_TYPES: {'type': list, 'value': [18, 77, 142, 944, 1346, 1748, 2150]},
-    #     ADCP_PD0_PARSED_KEY.FIXED_LEADER_ID: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.FIRMWARE_VERSION: {'type': int, 'value': 50},
-    #     ADCP_PD0_PARSED_KEY.FIRMWARE_REVISION: {'type': int, 'value': 40},
-    #     ADCP_PD0_PARSED_KEY.SYSCONFIG_FREQUENCY: {'type': int, 'value': 150},
-    #     ADCP_PD0_PARSED_KEY.SYSCONFIG_BEAM_PATTERN: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SYSCONFIG_SENSOR_CONFIG: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SYSCONFIG_HEAD_ATTACHED: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SYSCONFIG_VERTICAL_ORIENTATION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.DATA_FLAG: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.LAG_LENGTH: {'type': int, 'value': 53},
-    #     ADCP_PD0_PARSED_KEY.NUM_BEAMS: {'type': int, 'value': 4},
-    #     ADCP_PD0_PARSED_KEY.NUM_CELLS: {'type': int, 'value': 100},
-    #     ADCP_PD0_PARSED_KEY.PINGS_PER_ENSEMBLE: {'type': int, 'value': 256},
-    #     ADCP_PD0_PARSED_KEY.DEPTH_CELL_LENGTH: {'type': int, 'value': 32780},
-    #     ADCP_PD0_PARSED_KEY.BLANK_AFTER_TRANSMIT: {'type': int, 'value': 49154},
-    #     ADCP_PD0_PARSED_KEY.SIGNAL_PROCESSING_MODE: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.LOW_CORR_THRESHOLD: {'type': int, 'value': 64},
-    #     ADCP_PD0_PARSED_KEY.NUM_CODE_REPETITIONS: {'type': int, 'value': 17},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_MIN: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ERROR_VEL_THRESHOLD: {'type': int, 'value': 53255},
-    #     ADCP_PD0_PARSED_KEY.TIME_PER_PING_MINUTES: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.TIME_PER_PING_SECONDS: {'type': float, 'value': 1.0},
-    #     ADCP_PD0_PARSED_KEY.COORD_TRANSFORM_TYPE: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.COORD_TRANSFORM_TILTS: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.COORD_TRANSFORM_BEAMS: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.COORD_TRANSFORM_MAPPING: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.HEADING_ALIGNMENT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.HEADING_BIAS: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_SPEED: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_DEPTH: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_HEADING: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_PITCH: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_ROLL: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_CONDUCTIVITY: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_SOURCE_TEMPERATURE: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_DEPTH: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_HEADING: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_PITCH: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_ROLL: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_CONDUCTIVITY: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SENSOR_AVAILABLE_TEMPERATURE: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.BIN_1_DISTANCE: {'type': int, 'value': 60175},
-    #     ADCP_PD0_PARSED_KEY.TRANSMIT_PULSE_LENGTH: {'type': int, 'value': 4109},
-    #     ADCP_PD0_PARSED_KEY.REFERENCE_LAYER_START: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.REFERENCE_LAYER_STOP: {'type': int, 'value': 5},
-    #     ADCP_PD0_PARSED_KEY.FALSE_TARGET_THRESHOLD: {'type': int, 'value': 50},
-    #     ADCP_PD0_PARSED_KEY.LOW_LATENCY_TRIGGER: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.TRANSMIT_LAG_DISTANCE: {'type': int, 'value': 50688},
-    #     ADCP_PD0_PARSED_KEY.CPU_BOARD_SERIAL_NUMBER: {'type': long, 'value': 9367487254980977929L},
-    #     ADCP_PD0_PARSED_KEY.SYSTEM_BANDWIDTH: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SYSTEM_POWER: {'type': int, 'value': 255},
-    #     ADCP_PD0_PARSED_KEY.SERIAL_NUMBER: {'type': int, 'value': 206045184},
-    #     ADCP_PD0_PARSED_KEY.BEAM_ANGLE: {'type': int, 'value': 20},
-    #     ADCP_PD0_PARSED_KEY.VARIABLE_LEADER_ID: {'type': int, 'value': 128},
-    #     ADCP_PD0_PARSED_KEY.ENSEMBLE_NUMBER: {'type': int, 'value': 5},
-    #     ADCP_PD0_PARSED_KEY.INTERNAL_TIMESTAMP: {'type': float, 'value': 752},
-    #     ADCP_PD0_PARSED_KEY.ENSEMBLE_NUMBER_INCREMENT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.BIT_RESULT_DEMOD_0: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.BIT_RESULT_DEMOD_1: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.BIT_RESULT_TIMING: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SPEED_OF_SOUND: {'type': int, 'value': 1523},
-    #     ADCP_PD0_PARSED_KEY.TRANSDUCER_DEPTH: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.HEADING: {'type': int, 'value': 5221},
-    #     ADCP_PD0_PARSED_KEY.PITCH: {'type': int, 'value': -4657},
-    #     ADCP_PD0_PARSED_KEY.ROLL: {'type': int, 'value': -4561},
-    #     ADCP_PD0_PARSED_KEY.SALINITY: {'type': int, 'value': 35},
-    #     ADCP_PD0_PARSED_KEY.TEMPERATURE: {'type': int, 'value': 2050},
-    #     ADCP_PD0_PARSED_KEY.MPT_MINUTES: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.MPT_SECONDS: {'type': float, 'value': 0.0},
-    #     ADCP_PD0_PARSED_KEY.HEADING_STDEV: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.PITCH_STDEV: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ROLL_STDEV: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ADC_TRANSMIT_CURRENT: {'type': int, 'value': 116},
-    #     ADCP_PD0_PARSED_KEY.ADC_TRANSMIT_VOLTAGE: {'type': int, 'value': 169},
-    #     ADCP_PD0_PARSED_KEY.ADC_AMBIENT_TEMP: {'type': int, 'value': 88},
-    #     ADCP_PD0_PARSED_KEY.ADC_PRESSURE_PLUS: {'type': int, 'value': 79},
-    #     ADCP_PD0_PARSED_KEY.ADC_PRESSURE_MINUS: {'type': int, 'value': 79},
-    #     ADCP_PD0_PARSED_KEY.ADC_ATTITUDE_TEMP: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ADC_ATTITUDE: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ADC_CONTAMINATION_SENSOR: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.BUS_ERROR_EXCEPTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ADDRESS_ERROR_EXCEPTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ILLEGAL_INSTRUCTION_EXCEPTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ZERO_DIVIDE_INSTRUCTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.EMULATOR_EXCEPTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.UNASSIGNED_EXCEPTION: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.WATCHDOG_RESTART_OCCURED: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.BATTERY_SAVER_POWER: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.PINGING: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.COLD_WAKEUP_OCCURED: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.UNKNOWN_WAKEUP_OCCURED: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.CLOCK_READ_ERROR: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.UNEXPECTED_ALARM: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.CLOCK_JUMP_FORWARD: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.CLOCK_JUMP_BACKWARD: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.POWER_FAIL: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SPURIOUS_DSP_INTERRUPT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SPURIOUS_UART_INTERRUPT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.SPURIOUS_CLOCK_INTERRUPT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.LEVEL_7_INTERRUPT: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.ABSOLUTE_PRESSURE: {'type': int, 'value': 4294963793},
-    #     ADCP_PD0_PARSED_KEY.PRESSURE_VARIANCE: {'type': int, 'value': 0},
-    #     ADCP_PD0_PARSED_KEY.VELOCITY_DATA_ID: {'type': int, 'value': 1},
-    #     ADCP_PD0_PARSED_KEY.CORRELATION_MAGNITUDE_ID: {'type': int, 'value': 2},
-    #     ADCP_PD0_PARSED_KEY.CORRELATION_MAGNITUDE_BEAM1: {'type': list,
-    #                                                       'value': [19801, 1796, 1800, 1797, 1288, 1539, 1290, 1543,
-    #                                                                 1028, 1797, 1538, 775, 1034, 1283, 1029, 1799, 1801,
-    #                                                                 1545, 519, 772, 519, 1033, 1028, 1286, 521, 519,
-    #                                                                 1545, 1801, 522, 1286, 1030, 1032, 1542, 1035, 1283,
-    #                                                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.CORRELATION_MAGNITUDE_BEAM2: {'type': list,
-    #                                                       'value': [22365, 2057, 2825, 2825, 1801, 2058, 1545, 1286,
-    #                                                                 3079, 522, 1547, 519, 2052, 2820, 519, 1806, 1026,
-    #                                                                 1547, 1795, 1801, 2311, 1030, 781, 1796, 1037, 1802,
-    #                                                                 1035, 1798, 770, 2313, 1292, 1031, 1030, 2830, 523,
-    #                                                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.CORRELATION_MAGNITUDE_BEAM3: {'type': list,
-    #                                                       'value': [3853, 1796, 1289, 1803, 2317, 2571, 1028, 1282,
-    #                                                                 1799, 2825, 2574, 1026, 1028, 518, 1290, 1286, 1032,
-    #                                                                 1797, 1028, 2312, 1031, 775, 1549, 772, 1028, 772,
-    #                                                                 2570, 1288, 1796, 1542, 1538, 777, 1282, 773, 0, 0,
-    #                                                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.CORRELATION_MAGNITUDE_BEAM4: {'type': list,
-    #                                                       'value': [5386, 4100, 2822, 1286, 774, 1799, 518, 778, 3340,
-    #                                                                 1031, 1546, 1545, 1547, 2566, 3077, 3334, 1801,
-    #                                                                 1809, 2058, 1539, 1798, 1546, 3593, 1032, 2307,
-    #                                                                 1025, 1545, 2316, 2055, 1546, 1292, 2312, 1035,
-    #                                                                 2316, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.ECHO_INTENSITY_ID: {'type': int, 'value': 3},
-    #     ADCP_PD0_PARSED_KEY.ECHO_INTENSITY_BEAM1: {'type': list,
-    #                                                'value': [24925, 10538, 10281, 10537, 10282, 10281, 10281, 10282,
-    #                                                          10282, 10281, 10281, 10281, 10538, 10282, 10281, 10282,
-    #                                                          10281, 10537, 10281, 10281, 10281, 10281, 10281, 10281,
-    #                                                          10281, 10281, 10281, 10281, 10281, 10282, 10281, 10282,
-    #                                                          10537, 10281, 10281, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                          0]},
-    #     ADCP_PD0_PARSED_KEY.ECHO_INTENSITY_BEAM2: {'type': list,
-    #                                                'value': [29027, 12334, 12334, 12078, 12078, 11821, 12334, 12334,
-    #                                                          12078, 12078, 12078, 12078, 12078, 12078, 12078, 12079,
-    #                                                          12334, 12078, 12334, 12333, 12078, 12333, 12078, 12077,
-    #                                                          12078, 12078, 12078, 12334, 12077, 12078, 12078, 12078,
-    #                                                          12078, 12078, 12078, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                          0]},
-    #     ADCP_PD0_PARSED_KEY.ECHO_INTENSITY_BEAM3: {'type': list,
-    #                                                'value': [12079, 10282, 10281, 10281, 10282, 10281, 10282, 10282,
-    #                                                          10281, 10025, 10282, 10282, 10282, 10282, 10025, 10282,
-    #                                                          10281, 10025, 10281, 10281, 10282, 10281, 10282, 10281,
-    #                                                          10281, 10281, 10537, 10282, 10281, 10281, 10281, 10281,
-    #                                                          10281, 10282, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                          0]},
-    #     ADCP_PD0_PARSED_KEY.ECHO_INTENSITY_BEAM4: {'type': list,
-    #                                                'value': [14387, 12334, 12078, 12078, 12078, 12334, 12078, 12334,
-    #                                                          12078, 12078, 12077, 12077, 12334, 12078, 12334, 12078,
-    #                                                          12334, 12077, 12078, 11821, 12335, 12077, 12078, 12077,
-    #                                                          12334, 11822, 12334, 12334, 12077, 12077, 12078, 11821,
-    #                                                          11821, 12078, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                          0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_ID: {'type': int, 'value': 4},
-    #     ADCP_PD0_PARSED_KEY.CHECKSUM: {'type': int, 'value': 8239}
-    # }
-    #
-    # # red
-    # _coordinate_transformation_earth_parameters = {
-    #     # Earth Coordinates
-    #     ADCP_PD0_PARSED_KEY.WATER_VELOCITY_EAST: {'type': list,
-    #                                               'value': [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                         128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.WATER_VELOCITY_NORTH: {'type': list,
-    #                                                'value': [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                          128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.WATER_VELOCITY_UP: {'type': list,
-    #                                             'value': [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                       128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.ERROR_VELOCITY: {'type': list,
-    #                                          'value': [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                    128, 128, 128, 128, 128, 128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_3BEAM: {'type': list,
-    #                                              'value': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_TRANSFORMS_REJECT: {'type': list,
-    #                                                     'value': [25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                               25600, 25600, 25600, 25600, 25600, 25600, 25600]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_BAD_BEAMS: {'type': list,
-    #                                             'value': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                       0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_4BEAM: {'type': list,
-    #                                              'value': [25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600, 25600, 25600, 25600, 25600, 25600, 25600, 25600,
-    #                                                        25600]},
-    # }
-    #
-    # # blue
-    # _coordinate_transformation_beam_parameters = {
-    #     # Beam Coordinates
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_BEAM1: {'type': list,
-    #                                              'value': [25700, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_BEAM2: {'type': list,
-    #                                              'value': [25700, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_BEAM3: {'type': list,
-    #                                              'value': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.PERCENT_GOOD_BEAM4: {'type': list,
-    #                                              'value': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    #                                                        0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    #     ADCP_PD0_PARSED_KEY.BEAM_1_VELOCITY: {'type': list,
-    #                                           'value': [4864, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.BEAM_2_VELOCITY: {'type': list,
-    #                                           'value': [62719, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.BEAM_3_VELOCITY: {'type': list,
-    #                                           'value': [45824, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128]},
-    #     ADCP_PD0_PARSED_KEY.BEAM_4_VELOCITY: {'type': list,
-    #                                           'value': [19712, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-    #                                                     128, 128, 128, 128, 128, 128, 128, 128, 128]},
-    # }
+    VIDEO_STREAM = (
+        "\x7f\x7f\x68\x08\x00\x06\x12\x00\x4d\x00\x8e\x00\xb0\x03\x42\x05\xd4\x06\x00\x00\x32\x28\xc8\x41\x00\x35\x04\x64\x01\x00\x80\x0c" +
+        "\xc0\x02\x01\x40\x11\x00\xd0\x07\x00\x01\x00\x00\x00\x00\x00\x00\x7d\x3d\xeb\x0f\x10\x0d\x01\x05\x32\x00\xc6\x00\x82\x00\x00\x06" +
+        "\xff\x23\xe5\x09\x00\x00\xff\x00\x0c\x48\x00\x00\x14\x80\x00\x05\x00\x0d\x03\x0f\x15\x21\x02\x2e\x00\x00\x00\xf3\x05\x00\x00\x65" +
+        "\x14\xcf\xed\x2f\xee\x23\x00\x02\x08" +
+        "\x00\x00\x00\x00\x00\x00\x74\xa9\x58\x4f\x4f\x00\x00\x00\x00\x00\x00\x00\x04\x90\x51\xf2\xff\xff\x00\x00\x00\x00\x00\x14\x0d\x03" +
+        "\x0f\x15\x21\x02\x2e\x00\x01\x13\x00\xf4\xff\xb3\x00\x4d\x00\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80\x00\x80" +
+        "\x00\x80\x00\x80\x00\x80\x00\x80\x00" +
+        "\x02\x4d\x59\x57\x5d\x0f\x0d\x15\x0a\x07\x04\x08\x09\x07\x04\x10\x04\x07\x08\x0b\x09\x05\x09\x0b\x06\x07\x05\x0b\x09\x07\x0b\x05" +
+        "\x06\x05\x08\x07\x09\x09\x0d\x03\x06\x06\x03\x08\x0a\x0a\x0b\x07\x07\x05\x0a\x06\x09\x04\x04\x02\x06\x06\x07\x05\x06\x05\x02\x03" +
+        "\x0a\x04\x04\x0c\x07\x07\x07\x0d\x0c\x07\x05\x02\x0a\x0b\x09\x04\x07\x06\x02\x06\x0b\x0a\x0e\x06\x0a\x03\x07\x02\x07\x04\x02\x06" +
+        "\x09\x04\x0a\x08\x04\x04\x04\x06\x0b" +
+        "\x05\x03\x0b\x04\x02\x06\x0a\x06\x04\x05\x02\x07\x05\x0a\x0c\x05\x07\x07\x07\x0e\x05\x06\x0d\x06\x07\x09\x04\x02\x04\x08\x07\x09" +
+        "\x06\x09\x06\x0b\x07\x05\x07\x11\x02\x07\x07\x03\x04\x04\x08\x0a\x03\x04\x07\x09\x09\x08\x06\x03\x02\x07\x09\x07\x04\x07\x07\x06" +
+        "\x04\x09\x04\x06\x03\x07\x06\x0a\x04\x04\x03\x0d\x06\x0d\x0e\x09\x05\x06\x07\x04\x03\x04\x04\x08\x02\x09\x04\x0d\x04\x04\x09\x03" +
+        "\x02\x07\x07\x0a\x03\x04\x04\x01\x06" +
+        "\x09\x04\x0b\x0a\x0a\x06\x09\x07\x09\x07\x06\x05\x08\x09\x0c\x02\x0a\x03\x02\x07\x04\x08\x07\x05\x06\x09\x09\x06\x06\x06\x0a\x04" +
+        "\x06\x05\x0c\x06\x02\x05\x0c\x04\x08\x04\x07\x03\x09\x09\x08\x06\x06\x04\x06\x05\x02\x04\x0b\x04\x0b\x0b\x0e\x03\x05\x09\x0c\x05" +
+        "\x03\x02\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x61\x5d\x71\x63\x2f\x2f\x38\x33" +
+        "\x29\x2a\x30\x2e\x28\x2a\x30\x2e\x28" +
+        "\x29\x30\x2e\x28\x29\x2f\x2e\x29\x29\x2f\x2e\x28\x29\x2f\x2e\x28\x2a\x2f\x2e\x28\x2a\x2f\x2e\x28\x29\x2e\x2d\x28\x29\x30\x2e\x28" +
+        "\x29\x30\x2e\x28\x2a\x2f\x2e\x28\x2a\x30\x2e\x28\x2a\x30\x2e\x28\x2a\x2f\x2e\x28\x29\x2f\x2e\x28\x29\x2f\x2e\x27\x29\x2f\x2e\x28" +
+        "\x29\x2f\x2e\x28\x2a\x2f\x2d\x28\x29\x2f\x2e\x28\x2a\x2f\x2d\x29\x2a\x2f\x2e\x28\x2a\x30\x2e\x28\x2a\x2f\x2e\x28\x2a\x2f\x2e\x28" +
+        "\x29\x2f\x2e\x27\x29\x30\x2e\x28\x2a" +
+        "\x2f\x2f\x28\x2a\x2f\x2e\x28\x29\x30\x2e\x28\x29\x30\x2e\x29\x29\x2f\x2e\x27\x29\x2f\x2d\x28\x29\x30\x2e\x28\x29\x2f\x2e\x28\x29" +
+        "\x30\x2d\x28\x29\x2e\x2d\x28\x29\x2f\x2e\x28\x2a\x30\x2f\x28\x29\x30\x2d\x28\x29\x2f\x2d\x28\x29\x2f\x2e\x28\x2a\x2f\x2e\x28\x29" +
+        "\x2f\x2d\x28\x29\x2f\x2d\x28\x29\x2f\x2e\x28\x29\x30\x2e\x28\x29\x2f\x2e\x28\x29\x2e\x2e\x28\x29\x2f\x2e\x29\x29\x30\x2e\x28\x29" +
+        "\x30\x2e\x28\x2a\x30\x2e\x28\x29\x2f" +
+        "\x2d\x28\x29\x2f\x2d\x28\x2a\x2f\x2e\x28\x29\x2f\x2d\x28\x29\x2f\x2e\x28\x29\x2f\x2e\x28\x2a\x2f\x2e\x28\x29\x2e\x2d\x29\x29\x2f" +
+        "\x2e\x28\x29\x2e\x2d\x28\x29\x2f\x2e\x28\x2a\x2f\x2e\x28\x29\x2f\x2e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x04\x64\x64\x64\x64\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" +
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x7d\xf2\x2f\x20")
 
-    # _pd0_parameters = dict(_pd0_parameters_base.items() +
-    #                        _coordinate_transformation_beam_parameters.items())
-    # _pd0_parameters_earth = dict(_pd0_parameters_base.items() +
-    #                              _coordinate_transformation_earth_parameters.items())
+    VIDEO_STREAM_LEN =len(VIDEO_STREAM)
+
+
 
     size_1 = chr(0x01)
     size_2 = chr(0x02)
@@ -708,6 +418,9 @@ class ADCPTMixin(DriverTestMixin):
         CAMDS_HEALTH_STATUS_KEY.error: {'type': int, 'value': 3}
     }
 
+    _video_dict = {
+        CAMDS_VIDEO_KEY.CAMDS_VIDEO_BINARY: {'type': unicode, 'value': base64.b32encode(VIDEO_STREAM)},
+    }
     #_disk_data = '<\x0B:\x06:GC\x01\x02\x03\x04\x05\x06>'
     _disk_data = '<' + size_B + ':' + size_6 + ':' + 'GC' + size_1 + size_2 + \
                   size_3 + size_4 + size_5 + size_6 + size_7+ '>'
@@ -795,16 +508,14 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
 
         # Force the instrument into a known state
         self.assert_force_state(driver, initial_protocol_state)
-        #self.assert_force_all_slave_states(driver, ProtocolState.COMMAND)
 
-    # def test_driver_schema(self):
-    #     """
-    #     get the driver schema and verify it is configured properly
-    #     """
-    #     temp_parameters = copy.deepcopy(self._driver_parameters)
-    #     #temp_parameters.update(self._driver_parameters_slave)
-    #     driver = InstrumentDriver(self._got_data_event_callback)
-    #     self.assert_driver_schema(driver, temp_parameters, self._driver_capabilities)
+    def test_driver_schema(self):
+         """
+         get the driver schema and verify it is configured properly
+         """
+         temp_parameters = copy.deepcopy(self._driver_parameters)
+         driver = InstrumentDriver(self._got_data_event_callback)
+         self.assert_driver_schema(driver, temp_parameters, self._driver_capabilities)
 
     def test_got_data(self):
         """
@@ -872,6 +583,27 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         self.assert_chunker_sample_with_noise(chunker, self._disk_data)
         self.assert_chunker_fragmented_sample(chunker, self._disk_data, 6)
         self.assert_chunker_combined_sample(chunker, self._disk_data)
+
+    def test_video_stream(self):
+        port_agent_package = {
+            'type': 7,
+            'length':self.VIDEO_STREAM_LEN ,
+            'checksum': 7,
+            'raw': self.VIDEO_STREAM
+        }
+        video_stream = self.generate_raw_stream(port_agent_package)
+        self.assert_data_particle_header(video_stream, DataParticleType.CAMDS_VIDEO)
+
+    def generate_raw_stream(self, port_agent_packet):
+        """
+        Publish raw data
+        @param: port_agent_packet port agent packet containing raw
+        """
+        particle = CAMDS_VIDEO(port_agent_packet,
+                                           port_timestamp=round(2.675, 2))
+
+        parsed_sample = particle.generate()
+        return parsed_sample
 
     def test_protocol_filter_capabilities(self):
         """

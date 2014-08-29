@@ -16,7 +16,7 @@ from mi.core.log import get_logger
 log = get_logger()
 
 from mi.core.common import BaseEnum
-from mi.core.instrument.data_particle import DataParticle
+from mi.core.instrument.data_particle import DataParticle, RawDataParticle
 from mi.core.instrument.data_particle import DataParticleKey
 from mi.core.instrument.data_particle import CommonDataParticleType
 
@@ -57,17 +57,17 @@ class CAMDS_VIDEO_KEY(BaseEnum):
     CAMDS_VIDEO_BINARY = "raw"
 
 # Data particle for PT4 command
-class CAMDS_VIDEO(DataParticle):
+class CAMDS_VIDEO(RawDataParticle):
     """
     cam video stream data particle
     """
     _data_particle_type = DataParticleType.CAMDS_VIDEO
 
-    def _build_parsed_values(self):
-        result = []
-        result.append({DataParticleKey.VALUE_ID: CAMDS_VIDEO_KEY.CAMDS_VIDEO_BINARY,
-                       DataParticleKey.VALUE: self.raw_data})
-        return result
+    # def _build_parsed_values(self):
+    #     result = []
+    #     result.append({DataParticleKey.VALUE_ID: CAMDS_VIDEO_KEY.CAMDS_VIDEO_BINARY,
+    #                    DataParticleKey.VALUE: self.raw_data})
+    #     return result
 
 
 # HS command
