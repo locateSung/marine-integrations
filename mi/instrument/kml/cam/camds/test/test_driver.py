@@ -181,110 +181,110 @@ class ADCPTMixin(DriverTestMixin):
 
         KMLParameter.CAMERA_GAIN[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.CAMERA_GAIN[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.CAMERA_GAIN[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT]},
         KMLParameter.CAMERA_MODE[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.CAMERA_MODE[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.CAMERA_MODE[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.CAMERA_MODE[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.CAMERA_MODE[ParameterIndex.D_DEFAULT]},
         KMLParameter.COMPRESSION_RATIO[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.COMPRESSION_RATIO[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.COMPRESSION_RATIO[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT]},
         KMLParameter.FOCUS_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FOCUS_POSITION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.FOCUS_POSITION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT]},
         KMLParameter.FOCUS_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FOCUS_SPEED[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.FOCUS_SPEED[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT]},
         KMLParameter.FRAME_RATE[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FRAME_RATE[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.FRAME_RATE[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.FRAME_RATE[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.FRAME_RATE[ParameterIndex.D_DEFAULT]},
         KMLParameter.IMAGE_RESOLUTION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT]},
         KMLParameter.IRIS_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.IRIS_POSITION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.IRIS_POSITION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.IRIS_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.IRIS_POSITION[ParameterIndex.D_DEFAULT]},
         KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT]},
         KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT]},
         KMLParameter.NTP_SETTING[ParameterIndex.KEY]:
             {TYPE: str, READONLY: True, DA: True, STARTUP: False,
-             DEFAULT: KMLParameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.NTP_SETTING[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.NTP_SETTING[ParameterIndex.D_DEFAULT]},
         KMLParameter.PAN_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.PAN_POSITION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.PAN_POSITION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.PAN_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.PAN_POSITION[ParameterIndex.D_DEFAULT]},
         KMLParameter.PAN_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.PAN_SPEED[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.PAN_SPEED[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.PAN_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.PAN_SPEED[ParameterIndex.D_DEFAULT]},
         KMLParameter.SHUTTER_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.SHUTTER_SPEED[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.SHUTTER_SPEED[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT]},
         KMLParameter.SOFT_END_STOPS[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.SOFT_END_STOPS[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.SOFT_END_STOPS[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT]},
         KMLParameter.TILT_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.TILT_POSITION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.TILT_POSITION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.TILT_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.TILT_POSITION[ParameterIndex.D_DEFAULT]},
         KMLParameter.TILT_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.TILT_SPEED[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.TILT_SPEED[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.TILT_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.TILT_SPEED[ParameterIndex.D_DEFAULT]},
         KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: True, DA: True, STARTUP: False,
-             DEFAULT: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT]},
         KMLParameter.ZOOM_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.ZOOM_POSITION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.ZOOM_POSITION[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT]},
         KMLParameter.ZOOM_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.ZOOM_SPEED[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.ZOOM_SPEED[ParameterIndex.DEFAULT_DATA]},
+             DEFAULT: KMLParameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: KMLParameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT]},
 
         # Engineering parameters
         KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA]},
+                                    VALUE: KMLParameter.PRESET_NUMBER[ParameterIndex.D_DEFAULT]},
         KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA]},
+                                    VALUE: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.D_DEFAULT]},
         KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA]},
+                                    VALUE: KMLParameter.VIDEO_FORWARDING[ParameterIndex.D_DEFAULT]},
         KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA]},
+                                    VALUE: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.D_DEFAULT]},
         KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA]},
+                                    VALUE: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.D_DEFAULT]},
         KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
              DEFAULT: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA]}
+                                    VALUE: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.D_DEFAULT]}
     }
 
     _driver_capabilities = {
@@ -295,6 +295,7 @@ class ADCPTMixin(DriverTestMixin):
         KMLCapability.START_CAPTURE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
         KMLCapability.ACQUIRE_STATUS: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
         KMLCapability.GOTO_PRESET: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
+        KMLCapability.SET_PRESET: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
         KMLCapability.LAMP_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
         KMLCapability.LAMP_ON: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
         KMLCapability.LASER_1_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
