@@ -673,7 +673,7 @@ class Protocol(CAMDSProtocol):
                              startup_param=False,
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
-                             default_value=base64.b64encode(Parameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.NTP_SETTING[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -684,7 +684,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY],
                              r'NOT USED',
@@ -696,7 +696,7 @@ class Protocol(CAMDSProtocol):
                              startup_param=False,
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
-                             default_value=base64.b64encode(Parameter.WHEN_DISK_IS_FULL[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.CAMERA_MODE[ParameterIndex.KEY],
                              r'NOT USED',
@@ -707,7 +707,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.CAMERA_MODE[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.CAMERA_MODE[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.CAMERA_MODE[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.FRAME_RATE[ParameterIndex.KEY],
                              r'NOT USED',
@@ -718,7 +718,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.FRAME_RATE[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.FRAME_RATE[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.FRAME_RATE[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.IMAGE_RESOLUTION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -729,7 +729,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.IMAGE_RESOLUTION[ParameterIndex.DESCRIPTION],
                              direct_access=True,
                              startup_param=True,
-                             default_value=base64.b64encode(Parameter.IMAGE_RESOLUTION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.COMPRESSION_RATIO[ParameterIndex.KEY],
                              r'NOT USED',
@@ -740,7 +740,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.COMPRESSION_RATIO[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.COMPRESSION_RATIO[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.SHUTTER_SPEED[ParameterIndex.KEY],
                              r'NOT USED',
@@ -751,18 +751,18 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.SHUTTER_SPEED[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.SHUTTER_SPEED[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.CAMERA_GAIN[ParameterIndex.KEY],
                              r'NOT USED',
                              lambda match: bool(int(match.group(1))),
                              int,
-                             type=ParameterDictType.BOOL,
+                             type=ParameterDictType.STRING,
                              display_name=Parameter.CAMERA_GAIN[ParameterIndex.DISPLAY_NAME],
                              value_description=Parameter.CAMERA_GAIN[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.CAMERA_GAIN[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.LAMP_BRIGHTNESS[ParameterIndex.KEY],
                              r'NOT USED',
@@ -773,7 +773,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.LAMP_BRIGHTNESS[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.LAMP_BRIGHTNESS[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.FOCUS_SPEED[ParameterIndex.KEY],
                              r'NOT USED',
@@ -784,7 +784,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.FOCUS_SPEED[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.FOCUS_SPEED[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.FOCUS_POSITION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -795,18 +795,19 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.FOCUS_POSITION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.FOCUS_POSITION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.ZOOM_SPEED[ParameterIndex.KEY],
                              r'NOT USED',
                              lambda match: int(match.group(1)),
-                             lambda value: '%+06d' % value,
-                             type=ParameterDictType.INT,
+                             str,
+                             #lambda value: '%+06d' % value,
+                             type=ParameterDictType.STRING,
                              display_name=Parameter.ZOOM_SPEED[ParameterIndex.DISPLAY_NAME],
                              value_description=Parameter.ZOOM_SPEED[ParameterIndex.DESCRIPTION],
                              direct_access=True,
                              startup_param=True,
-                             default_value=base64.b64encode(Parameter.ZOOM_SPEED[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.IRIS_POSITION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -817,7 +818,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.IRIS_POSITION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.IRIS_POSITION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.IRIS_POSITION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.ZOOM_POSITION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -828,7 +829,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.ZOOM_POSITION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.ZOOM_POSITION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.PAN_SPEED[ParameterIndex.KEY],
                              r'NOT USED',
@@ -839,7 +840,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.PAN_SPEED[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.PAN_SPEED[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.PAN_SPEED[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.TILT_SPEED[ParameterIndex.KEY],
                              r'NOT USED',
@@ -850,7 +851,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.TILT_SPEED[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.TILT_SPEED[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.TILT_SPEED[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.SOFT_END_STOPS[ParameterIndex.KEY],
                              r'NOT USED',
@@ -861,18 +862,18 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.SOFT_END_STOPS[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.SOFT_END_STOPS[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.PAN_POSITION[ParameterIndex.KEY],
                              r'NOT USED',
                              lambda match: int(match.group(1)),
-                             str,
-                             type=ParameterDictType.STRING,
+                             str, # format before sending sensror
+                             type=ParameterDictType.STRING, # meta data
                              display_name=Parameter.PAN_POSITION[ParameterIndex.DISPLAY_NAME],
                              value_description=Parameter.PAN_POSITION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.PAN_POSITION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.PAN_POSITION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.TILT_POSITION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -883,7 +884,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.TILT_POSITION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=True,
-                             default_value=base64.b64encode(Parameter.TILT_POSITION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.TILT_POSITION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY],
                              r'NOT USED',
@@ -894,7 +895,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.SAMPLE_INTERVAL[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.SAMPLE_INTERVAL[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
                              r'NOT USED',
@@ -905,7 +906,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.D_DEFAULT])
 
 
         self._param_dict.add(Parameter.VIDEO_FORWARDING[ParameterIndex.KEY],
@@ -917,7 +918,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.VIDEO_FORWARDING[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.VIDEO_FORWARDING[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
                              r'NOT USED',
@@ -928,7 +929,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.PRESET_NUMBER[ParameterIndex.KEY],
                              r'NOT USED',
@@ -939,7 +940,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.PRESET_NUMBER[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.PRESET_NUMBER[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -950,7 +951,7 @@ class Protocol(CAMDSProtocol):
                              value_description=Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.DESCRIPTION],
                              startup_param=True,
                              direct_access=False,
-                             default_value=base64.b64encode(Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA]))
+                             default_value=Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.D_DEFAULT])
 
         self._param_dict.set_default(Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY])
         self._param_dict.set_default(Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY])
@@ -971,8 +972,6 @@ class Protocol(CAMDSProtocol):
         return_dict = {}
         return_dict[ConfigMetadataKey.DRIVER] = self._driver_dict.generate_dict()
         return_dict[ConfigMetadataKey.COMMANDS] = self._cmd_dict.generate_dict()
-
         return_dict[ConfigMetadataKey.PARAMETERS] = self._param_dict.generate_dict()
-
 
         return return_dict
