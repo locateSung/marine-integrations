@@ -68,6 +68,7 @@ class ParameterIndex(BaseEnum):
     DISPLAY_NAME = 5
     DESCRIPTION = 6
     KEY = 7
+    D_DEFAULT = 8
 
 class KMLParameter(DriverParameter):
     """
@@ -91,8 +92,8 @@ class KMLParameter(DriverParameter):
     Byte 4 to end = Server name in ASCII with \0 end of string
 
     """
-    NTP_SETTING =('NT', '<\x03:GN:>', 1, 19, '\x05\x00\x00157.237.237.104\x00', 'NTP Setting',
-                  'interval(in second), NTP port, NTP Server name', 'NTP_SETTING' )
+    NTP_SETTING =('NT', '<\x03:GN:>', 1, None, '\x00\x00157.237.237.104\x00', 'NTP Setting',
+                  'interval(in second), NTP port, NTP Server name', 'NTP_SETTING', 5)
 
     """
     set <\x04:CL:\x00>
@@ -103,7 +104,7 @@ class KMLParameter(DriverParameter):
     Byte1 to end = Network location as an ASCII string with \0 end of string. Send only \0 character to set default
     """
     NETWORK_DRIVE_LOCATION = ('CL','<\x04:CL:\x00>', 1, None, '\x00',
-                              'Network Drive Location','\x00 for local default location', 'NETWORK_DRIVE_LOCATION' )
+                              'Network Drive Location','\x00 for local default location', 'NETWORK_DRIVE_LOCATION', 0)
 
 
     """
@@ -118,8 +119,8 @@ class KMLParameter(DriverParameter):
     0x2 = return NAK (or stop capture) when disk is full.
     """
     WHEN_DISK_IS_FULL = ('RM', '<\x03:GM:>', 1, 1, '\x01', 'When Disk Is Full',
-                         '0x1 = Replace oldest image on the disk, 0x2 = return ERROR when disk is full',
-                         'WHEN_DISK_IS_FULL')
+                         '1 = Replace oldest image on the disk, 2 = return ERROR when disk is full',
+                         'WHEN_DISK_IS_FULL', 1)
 
     """
     Camera Mode
@@ -141,7 +142,7 @@ class KMLParameter(DriverParameter):
     """
 
     CAMERA_MODE = ('SV', '<\x03:GV:>', 1, 1, '\x09', 'Camera Mode',
-                   '0x00 = None (off) 0x09 = Stream 0x0A = Framing 0x0B = Focus', 'CAMERA_MODE')
+                   '0 = None (off), 9 = Stream, 10 = Framing, 11 = Focus', 'CAMERA_MODE', 9)
 
     """
     set <\x04:FR:\x1E>
@@ -152,7 +153,7 @@ class KMLParameter(DriverParameter):
     GR + 1 Byte with value between 1 and 30.
     If the requested frame rate cannot be achieved, the maximum rate will be used.
     """
-    FRAME_RATE = ('FR', '<\x03:GR:>', 1, 1, '\x1E', 'Frame Rate', 'From 1 to 30 frames in second', 'FRAME_RATE')
+    FRAME_RATE = ('FR', '<\x03:GR:>', 1, 1, '\x1E', 'Frame Rate', 'From 1 to 30 frames in second', 'FRAME_RATE', 30)
 
     """
     set <\x04:SD:\x01>
@@ -165,7 +166,7 @@ class KMLParameter(DriverParameter):
     GD + 1 Byte with a dividing value of 0x1, 0x2, 0x4 and 0x8.
     """
     IMAGE_RESOLUTION = ('SD', '<\x03:GD:>', 1, 1, '\x01',
-                        'Image Resolution','0x1 = Full resolution, 0x2 = half Full resolution', 'IMAGE_RESOLUTION')
+                        'Image Resolution','1 = Full resolution, 2 = half Full resolution', 'IMAGE_RESOLUTION', 1)
 
     """
     set <\x04:CD:\x64>
@@ -178,7 +179,7 @@ class KMLParameter(DriverParameter):
     GI + 1 Byte with value between 0x01 and 0x64. (decimal 1 - 100) 0x64 = Minimum data loss 0x01 = Maximum data loss
     """
     COMPRESSION_RATIO = ('CD', '<\x03:GI:>',1, 1, '\x64', 'Compression Ratio',
-                         '0x64 = Minimum data loss, 0x01 = Maximum data loss', 'COMPRESSION_RATIO')
+                         '100 = Minimum data loss, 1 = Maximum data loss', 'COMPRESSION_RATIO', 100)
 
     """
     set <\x05:ET:\xFF\xFF>
@@ -195,7 +196,8 @@ class KMLParameter(DriverParameter):
     (if both bytes are set to 0xFF, the camera is in auto shutter mode)
     """
     SHUTTER_SPEED = ('ET', '<\x03:EG:>', 1, 2, '\xFF\xFF', 'Shutter Speed',
-                     'Byte1 = Value (starting value), Byte2 = Exponent (Number of zeros to add)', 'SHUTTER_SPEED')
+                     'Byte1 = Value (starting value), Byte2 = Exponent (Number of zeros to add)', 'SHUTTER_SPEED',
+                     '255:255')
 
     """
     get <\x04:GS:\xFF>
@@ -207,8 +209,8 @@ class KMLParameter(DriverParameter):
     GG + 1 byte
     Value 0x01 to 0x20 for a static value and 0xFF for auto GAIN
     """
-    CAMERA_GAIN = ('GS', '<\x03:GG:>',1,1, '\xFF', 'Camera Gain','From 0x01 to 0x20 and 0xFF sets auto gain',
-                  'CAMERA_GAIN')
+    CAMERA_GAIN = ('GS', '<\x03:GG:>',1,1, '\xFF', 'Camera Gain','From 1 to 32 and 255 sets auto gain',
+                  'CAMERA_GAIN', 255)
 
     """
     set <\x05:BF:\x03\x32>
@@ -222,8 +224,8 @@ class KMLParameter(DriverParameter):
     2nd byte for lamp 2. For each lamp, MSB indicates On/Off
     """
     LAMP_BRIGHTNESS = ('BF', '<0x03:PF:>', 1, 2, '\x03\x32','Lamp Brightness',
-                       'Byte 1 is lamp to control: 0x01 = Lamp1 0x02 = Lamp2 0x03 = Both Lamps, Byte 2 is brightness between 0x00 and 0x64',
-                       'LAMP_BRIGHTNESS')
+                       'Byte 1 is lamp to control: 1 = Lamp1, 2 = Lamp2, 3 = Both Lamps, Byte 2 is brightness between 0 and 100',
+                       'LAMP_BRIGHTNESS', '3:50')
 
     """
     Set <\x04:FX:\x00>
@@ -235,7 +237,7 @@ class KMLParameter(DriverParameter):
     ???set <0x03:FP:>
     ???FP + 1 byte between \x00 and \xC8
     """
-    FOCUS_SPEED = ('FX', None, 1, 1, '\x00', 'Focus Speed','between 0x00 and 0x0F', 'FOCUS_SPEED')
+    FOCUS_SPEED = ('FX', None, 1, 1, '\x00', 'Focus Speed','between 0 and 15', 'FOCUS_SPEED', 0)
 
     """
     set <\x04:ZX:\x00>
@@ -246,7 +248,7 @@ class KMLParameter(DriverParameter):
     ???get <0x03:ZP:>
     ???ZP + 1 byte between 0x00 and 0xC8
     """
-    ZOOM_SPEED = ('ZX', None, 1, 1, '\x00', 'Zoom Speed', 'between 0x00 and 0x0F', 'ZOOM_SPEED')
+    ZOOM_SPEED = ('ZX', None, 1, 1, '\x00', 'Zoom Speed', 'between 0 and 15', 'ZOOM_SPEED', 0)
 
     """
     Set <\x04:IG:\x08>
@@ -257,7 +259,7 @@ class KMLParameter(DriverParameter):
     IP + 1 byte between 0x00
     get <0x03:IP>
     """
-    IRIS_POSITION = ('IG', '<0x03:IP>', 1,1, '\x08', 'Iris Position', 'between 0x00 and 0x0F', 'IRIS_POSITION')
+    IRIS_POSITION = ('IG', '<0x03:IP>', 1,1, '\x08', 'Iris Position', 'between 0 and 15', 'IRIS_POSITION', 8)
 
     """
     Zoom Position
@@ -268,7 +270,7 @@ class KMLParameter(DriverParameter):
     ZP + 1 byte between 0x00 and 0xC8
     get <0x03:ZP:>
     """
-    ZOOM_POSITION = ('ZG', '<0x03:ZP:>', 1, 1, '\x64', 'Zoom Position', 'between 0x00 and 0xC8', 'ZOOM_POSITION')
+    ZOOM_POSITION = ('ZG', '<0x03:ZP:>', 1, 1, '\x64', 'Zoom Position', 'between 0 and 200', 'ZOOM_POSITION', 100)
 
     """
     Pan Speed
@@ -277,14 +279,14 @@ class KMLParameter(DriverParameter):
 
     ???? No get pan speed
     """
-    PAN_SPEED = ('DS', None, None, None, '\x32', 'Pan Speed', 'between 0x00 and 0x64', 'PAN_SPEED')
+    PAN_SPEED = ('DS', None, None, None, '\x32', 'Pan Speed', 'between 0 and 100', 'PAN_SPEED', 50)
 
     """
     Set tilt speed
     1 byte between 0x00 and 0x64
     Default is 0x32 : <0x04:TA:0x32>
     """
-    TILT_SPEED = ('TA', None, None, None, '\x32', 'TILT Speed','between 0x00 and 0x64', 'TILT_SPEED')
+    TILT_SPEED = ('TA', None, None, None, '\x32', 'TILT Speed','between 0 and 100', 'TILT_SPEED', 50)
 
     """
     Enable or disable the soft end stops of the pan and tilt device
@@ -301,8 +303,8 @@ class KMLParameter(DriverParameter):
     Byte7 = End stops enable (0x1 = enabled, 0x0 = disabled)
     Bytes 1 to 6 are ASCII characters between 0x30 and 0x39
     """
-    SOFT_END_STOPS = ('ES', '<0x03:AS:>', 7, 1, '\x01', 'Soft End Stops','0x00 = Disable 0x01 = Enable',
-                      'SOFT_END_STOPS')
+    SOFT_END_STOPS = ('ES', '<0x03:AS:>', 7, 1, '\x01', 'Soft End Stops','0 = Disable, 1 = Enable',
+                      'SOFT_END_STOPS', 1)
 
     """
     3 Bytes representing a three letter string containing the required pan location.
@@ -324,7 +326,7 @@ class KMLParameter(DriverParameter):
     """
     PAN_POSITION = ('PP', '<0x03:AS:>', 4, 3,'\x30\x37\x35','Pan Position',
                     'Byte1 = Hundreds of degrees, Byte2 = Tens of degrees, Byte 3 = Units of degrees',
-                    'PAN_POSITION')
+                    'PAN_POSITION', '48:55:53')
 
     """
     3 Bytes representing a three letter string containing the required tilt location.
@@ -346,7 +348,7 @@ class KMLParameter(DriverParameter):
     """
     TILT_POSITION = ('TP', '<0x03:AS:>',1, 3, '\x30\x37\x35', 'Tilt Position',
                     'Byte1 = Hundreds of degrees, Byte2 = Tens of degrees, Byte 3 = Units of degrees',
-                    'TILT_POSITION')
+                    'TILT_POSITION', '48:55:53')
 
     """
     set <\x04:FG:\x64>
@@ -354,20 +356,20 @@ class KMLParameter(DriverParameter):
 
     get <\x03:FP:>
     """
-    FOCUS_POSITION = ('FG', '<\x03:FP:>', 1, 1, '\x64', 'Focus Position', 'between \x00 and \xC8', 'FOCUS_POSITION')
+    FOCUS_POSITION = ('FG', '<\x03:FP:>', 1, 1, '\x64', 'Focus Position', 'between 0 and 200', 'FOCUS_POSITION', 100)
 
     # Engineering parameters for the scheduled commands
     SAMPLE_INTERVAL = (None, None, None, None, '00:00:00', 'Sample Interval',
-                       'hh:mm:ss, 00:00:00 will turn off the schedule','SAMPLE_INTERVAL')
+                       'hh:mm:ss, 00:00:00 will turn off the schedule','SAMPLE_INTERVAL', '00:00:00')
     ACQUIRE_STATUS_INTERVAL = (None, None, None, None, '00:00:00', 'Acquire Status Interval',
-                               'hh:mm:ss, 00:00:00 will turn off the schedule', 'ACQUIRE_STATUS_INTERVAL')
+                               'hh:mm:ss, 00:00:00 will turn off the schedule', 'ACQUIRE_STATUS_INTERVAL', '00:00:00')
     VIDEO_FORWARDING = (None, None, None, None, False, 'Video Forwarding Flag',
-                        'True - Turn on Video, False - Turn off video', 'VIDEO_FORWARDING')
+                        'True - Turn on Video, False - Turn off video', 'VIDEO_FORWARDING', False)
     VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video forwarding timeout',
-                                'hh:mm:ss, 00:00:00 means No timeout', 'VIDEO_FORWARDING_TIMEOUT')
-    PRESET_NUMBER = (None, None, None, None, 1,'Preset number', 'preset number (1- 15)', 'PRESET_NUMBER')
-    AUTO_CAPTURE_DURATION = (None, None, None, None, '3', 'Auto Capture Duration','1 to 5 Seconds',
-                             'AUTO_CAPTURE_DURATION')
+                                'hh:mm:ss, 00:00:00 means No timeout', 'VIDEO_FORWARDING_TIMEOUT', '00:00:00')
+    PRESET_NUMBER = (None, None, None, None, 1,'Preset number', 'preset number (1- 15)', 'PRESET_NUMBER', 1)
+    AUTO_CAPTURE_DURATION = (None, None, None, None, 3, 'Auto Capture Duration','1 to 5 Seconds',
+                             'AUTO_CAPTURE_DURATION', 3)
 
 class KMLParameter_display(DriverParameter):
     ACQUIRE_STATUS_INTERVAL =  KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DISPLAY_NAME]
@@ -798,6 +800,15 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         self.disable_autosample_recover = False
 
+    def convertDecToHex(int_value):
+        """
+        Convert decimal to hex
+        """
+        encoded = format(int_value, 'x')
+        length = len(encoded)
+        encoded = encoded.zfill(length+length%2)
+        return encoded.decode('hex')
+
     def build_simple_command(self, cmd, *args):
         self.build_camds_3byte_command(self, cmd, *args)
 
@@ -968,7 +979,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         try:
             # Get old param dict config.
             old_config = self._param_dict.get_config()
-            kwargs['expected_prompt'] = KMLPrompt.COMMAND
+            #kwargs['expected_prompt'] = KMLPrompt.COMMAND
             cmds = self._get_params()
             results = ""
             for attr in sorted(cmds):
@@ -1074,17 +1085,18 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
 
-        status_interval = self._param_dict.get(KMLParameter.ACQUIRE_STATUS_INTERVAL)
+        status_interval = self._param_dict.get(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY])
         if status_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLScheduledJob.STATUS,
+            self.start_scheduled_job(KMLParameter.ACQUIRE_STATUS_INTERVAL,
+                                     KMLScheduledJob.STATUS,
                                      KMLProtocolEvent.ACQUIRE_STATUS)
 
         # start scheduled event for get_status only if the interval is not "00:00:00
-        self.video_fowarding_flag = self._param_dict.get(KMLParameter.VIDEO_FORWARDING)
+        self.video_fowarding_flag = self._param_dict.get(KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY])
         #if(self.video_fowarding_flag):
         #    # todo : Start video forwarding
 
-        self.forwarding_time = self._param_dict.get(KMLParameter.VIDEO_FORWARDING_TIMEOUT)
+        self.forwarding_time = self._param_dict.get(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY])
 
 
     def _handler_command_exit(self, *args, **kwargs):
@@ -1149,9 +1161,9 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._driver_event(DriverAsyncEvent.STATE_CHANGE)
 
         # start scheduled event for Sampling only if the interval is not "00:00:00
-        sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL)
+        sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY])
         if sample_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SAMPLE,
+            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY], KMLScheduledJob.SAMPLE,
                                      KMLProtocolEvent.ACQUIRE_SAMPLE)
 
 
@@ -1192,13 +1204,13 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @return next_state, (next_agent_state, result) if successful.
         """
         result = None
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
         kwargs['timeout'] = 30
 
         # start scheduled event for Sampling only if the interval is not "00:00:00
         sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL)
         if sample_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL, KMLScheduledJob.SAMPLE,
+            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY], KMLScheduledJob.SAMPLE,
                                      KMLProtocolEvent.ACQUIRE_STATUS)
 
         next_state = KMLProtocolState.AUTOSAMPLE
@@ -1269,46 +1281,46 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # Raise if the command not understood.
 
         # Handle engineering parameters
-        if KMLParameter.SAMPLE_INTERVAL in params:
+        if KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY] in params:
             if (params[KMLParameter.SAMPLE_INTERVAL] != self._param_dict.get(
-                    KMLParameter.SAMPLE_INTERVAL)):
-                self._param_dict.set_value(KMLParameter.SAMPLE_INTERVAL,
-                                           params[KMLParameter.SAMPLE_INTERVAL])
+                    KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY],
+                                           params[KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]])
                 changed = True
 
-        if KMLParameter.ACQUIRE_STATUS_INTERVAL in params:
-            if (params[KMLParameter.ACQUIRE_STATUS_INTERVAL] != self._param_dict.get(
-                    KMLParameter.ACQUIRE_STATUS_INTERVAL)):
-                self._param_dict.set_value(KMLParameter.ACQUIRE_STATUS_INTERVAL,
-                                           params[KMLParameter.ACQUIRE_STATUS_INTERVAL])
+        if KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY] in params:
+            if (params[KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]] != self._param_dict.get(
+                    KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
+                                           params[KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]])
                 changed = True
 
-        if KMLParameter.VIDEO_FORWARDING_TIMEOUT in params:
-            if (params[KMLParameter.VIDEO_FORWARDING_TIMEOUT] != self._param_dict.get(
-                    KMLParameter.VIDEO_FORWARDING_TIMEOUT)):
-                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING_TIMEOUT,
-                                           params[KMLParameter.VIDEO_FORWARDING_TIMEOUT])
+        if KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY] in params:
+            if (params[KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]] != self._param_dict.get(
+                    KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
+                                           params[KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]])
                 changed = True
 
-        if KMLParameter.VIDEO_FORWARDING in params:
-            if (params[KMLParameter.VIDEO_FORWARDING] != self._param_dict.get(
-                    KMLParameter.VIDEO_FORWARDING)):
-                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING,
-                                           params[KMLParameter.VIDEO_FORWARDING])
+        if KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY] in params:
+            if (params[KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]] != self._param_dict.get(
+                    KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY],
+                                           params[KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]])
                 changed = True
 
-        if KMLParameter.AUTO_CAPTURE_DURATION in params:
-            if (params[KMLParameter.AUTO_CAPTURE_DURATION] != self._param_dict.get(
-                    KMLParameter.AUTO_CAPTURE_DURATION)):
-                self._param_dict.set_value(KMLParameter.AUTO_CAPTURE_DURATION,
-                                           params[KMLParameter.AUTO_CAPTURE_DURATION])
+        if KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY] in params:
+            if (params[KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]] != self._param_dict.get(
+                    KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY],
+                                           params[KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]])
                 changed = True
 
-        if KMLParameter.PRESET_NUMBER in params:
-            if (params[KMLParameter.PRESET_NUMBER] != self._param_dict.get(
-                    KMLParameter.PRESET_NUMBER)):
-                self._param_dict.set_value(KMLParameter.PRESET_NUMBER,
-                                           params[KMLParameter.PRESET_NUMBER])
+        if KMLParameter.PRESET_NUMBER[ParameterIndex.KEY] in params:
+            if (params[KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]] != self._param_dict.get(
+                    KMLParameter.PRESET_NUMBER[ParameterIndex.KEY])):
+                self._param_dict.set_value(KMLParameter.PRESET_NUMBER[ParameterIndex.KEY],
+                                           params[KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]])
                 changed = True
 
         if changed:
@@ -1328,11 +1340,11 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         result = None
 
         kwargs['timeout'] = 30
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
         result = self._do_cmd_resp(KMLInstrumentCmds.START_CAPTURE, *args, **kwargs)
 
-        next_state = KMLProtocolState.CAPTURE
-        next_agent_state = ResourceAgentState.STREAMING
+        next_state = None
+        next_agent_state = None
         return next_state, (next_agent_state, result)
 
     def _handler_capture_stop(self, *args, **kwargs):
@@ -1342,7 +1354,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         result = None
         kwargs['timeout'] = 30
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
         result = self._do_cmd_resp(KMLInstrumentCmds.STOP_CAPTURE, *args, **kwargs)
 
         # Wake up the device, continuing until autosample prompt seen.
@@ -1374,8 +1386,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # Tell driver superclass to send a state change event.
         # Superclass will query the state.
 
-        self._driver_event(DriverAsyncEvent.STATE_CHANGE)
-        self._sent_cmds = []
+        # self._driver_event(DriverAsyncEvent.STATE_CHANGE)
+        # self._sent_cmds = []
 
     def _handler_capture_exit(self, *args, **kwargs):
         """
@@ -1401,7 +1413,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 30
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         try:
             self._do_cmd_resp(KMLInstrumentCmds.TAKE_SNAPSHOT, *args, **kwargs)
@@ -1424,7 +1436,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         # Execute the following commands
         #  GET_DISK_USAGE = 'GC'
@@ -1455,7 +1467,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 30
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         try:
             self._do_cmd_resp(KMLInstrumentCmds.LAMP_ON, *args, **kwargs)
@@ -1474,7 +1486,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 30
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         try:
             self._do_cmd_resp(KMLInstrumentCmds.LAMP_OFF, *args, **kwargs)
@@ -1495,7 +1507,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             next_state = None
 
             kwargs['timeout'] = 2
-            kwargs['expected_prompt'] = KMLPrompt.COMMAND
+            #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
             try:
                 self._do_cmd_resp(command, light, *args, **kwargs)
@@ -1516,17 +1528,17 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         # Execute the following commands
         #  GET_DISK_USAGE = 'GC'
         #  HEALTH_REQUEST  = 'HS'
         pd = self._param_dict.get_all()
-
         result = []
         presetNumber = 1
-        for key, value in self.raw_data.items():
-            if key == KMLParameter.PRESET_NUMBER:
+
+        for key, value in pd.items():
+            if key == KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]:
                 presetNumber = value
 
         try:
@@ -1544,13 +1556,14 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
-        capturing_duration = self._param_dict.get(KMLParameter.AUTO_CAPTURE_DURATION)
+        capturing_duration = self._param_dict.get(KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY])
 
         if capturing_duration != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.AUTO_CAPTURE_DURATION, KMLScheduledJob.STOP_CAPTURE,
-                                     KMLProtocolEvent.STOP_CAPTURING)
+            self.start_scheduled_job(KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY],
+                                     KMLScheduledJob.STOP_CAPTURE,
+                                     KMLProtocolEvent.STOP_CAPTURE)
 
         try:
             self._do_cmd_resp(KMLInstrumentCmds.START_CAPTURE, *args, **kwargs)
@@ -1560,7 +1573,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
 
         # update VIDEO_FORWARDING flag and update the change to the upstream
-        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING, True)
+        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY], True)
         self._driver_event(DriverAsyncEvent.CONFIG_CHANGE)
         self.video_fowarding_flag = True
 
@@ -1570,7 +1583,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         self.stop_scheduled_job(KMLScheduledJob.STOP_CAPTURE)
 
@@ -1582,7 +1595,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
 
         # update VIDEO_FORWARDING flag and update the change to the upstream
-        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING, False)
+        self._param_dict.set_value(KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY], False)
         self._driver_event(DriverAsyncEvent.CONFIG_CHANGE)
         self.video_fowarding_flag = False
 
@@ -1595,17 +1608,17 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         next_state = None
 
         kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
 
         # Execute the following commands
         #  GET_DISK_USAGE = 'GC'
         #  HEALTH_REQUEST  = 'HS'
         pd = self._param_dict.get_all()
 
-        result = []
+        #result = []
         presetNumber = 1
-        for key, value in self.raw_data.items():
-            if key == KMLParameter.PRESET_NUMBER:
+        for key, value in self.pd.items():
+            if key == KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]:
                 presetNumber = value
 
         try:
@@ -1614,68 +1627,6 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         except Exception as e:
             raise InstrumentParameterException(
                 'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        return next_state, (None, None)
-
-    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
-        """
-        Take a snapshot
-        """
-        log.debug("IN _handler_command_acquire_status")
-        next_state = None
-
-        kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
-
-        # Execute the following commands
-        #  GET_DISK_USAGE = 'GC'
-        #  HEALTH_REQUEST  = 'HS'
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        time.sleep(.5)
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-
-        return next_state, (None, None)
-
-    def _handler_command_acquire_statusXXXX(self, *args, **kwargs):
-        """
-        Take a snapshot
-        """
-        log.debug("IN _handler_command_acquire_status")
-        next_state = None
-
-        kwargs['timeout'] = 2
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
-
-        # Execute the following commands
-        #  GET_DISK_USAGE = 'GC'
-        #  HEALTH_REQUEST  = 'HS'
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.GET_DISK_USAGE, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
-        time.sleep(.5)
-        try:
-            self._do_cmd_resp(KMLInstrumentCmds.HEALTH_REQUEST, *args, **kwargs)
-
-        except Exception as e:
-            raise InstrumentParameterException(
-                'InstrumentProtocolException in _do_cmd_no_resp()' + str(e))
-
 
         return next_state, (None, None)
 
@@ -1703,6 +1654,14 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
     def _handler_command_restore_factory_params(self):
         """
         """
+
+    def _get_param_tuple(self, param):
+        list_param = self._get_params()
+        results = ""
+        for attr in sorted(list_param):
+            if attr[ParameterIndex.KEY] is param:
+                return attr
+        return None
 
     def _get_response(self, response):
         #<size:command:data>
@@ -1748,15 +1707,16 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @throws InstrumentProtocolException if the parameter is not valid or
         if the formatting function could not accept the value passed.
         """
-        kwargs['expected_prompt'] = KMLPrompt.COMMAND
+        #kwargs['expected_prompt'] = KMLPrompt.COMMAND
         # try:
-        self.get_param = param
+        param_tuple = self._get_param_tuple(param)
+        self.get_param = param_tuple
         self.get_cmd = cmd
         #     get_cmd = param + '?' + NEWLINE
         # except KeyError:
         #     raise InstrumentParameterException('Unknown driver parameter.. %s' % param)
 
-        return param[ParameterIndex.GET]
+        return param_tuple[ParameterIndex.GET]
 
     def _build_set_command(self, cmd, param, val):
         """
@@ -1768,16 +1728,38 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @throws InstrumentProtocolException if the parameter is not valid or
         if the formatting function could not accept the value passed.
         """
-
-        self.get_param = param
+        param_tuple = self._get_param_tuple(param)
+        self.get_param = param_tuple
         self.get_cmd = cmd
+        data_size = 0
+        input_data =[]
+        val = val.trim()
 
         try:
-            # str_val = self._param_dict.format(param, val)
-            # # TODO replace the value set in the set command
+            if self.get_param[ParameterIndex.KEY] in [KMLParameter.PAN_POSITION[ParameterIndex.KEY],
+                                                              KMLParameter.TILT_POSITION[ParameterIndex.KEY]]:
+                if len(val) == 1:
+                    val = ord('0') + ':' + ord('0') + ':' + ord(val)
+                elif len(val) == 2:
+                    val = ord('0') + ':' + ord(val[0]) + ':' + ord(val[1])
+                elif len(val) == 3:
+                    val = ord('0') + ':' + ord(val[0]) + ':' + ord(val[1]) + ':' + ord(val[2])
+                else:
+                    raise InstrumentParameterException('The input cannot be more than 3 bytes. %s' % param)
+            input_data = val.split(':')
+            input_data_size = len(input_data)
+            converted = ''
+            for x in range(0,input_data_size):
+                #converted = converted + self.convert(int(input_data[int(x)].trim()))
+                converted = converted + self.convertDecToHex(int(input_data[int(x)]))
 
-            data_size = len(val) + 3
-            set_cmd = '<%s:%s:%s>' % (data_size, param[ParameterIndex.SET], val)
+            data_size = input_data_size + 3
+
+            if param == KMLParameter.NTP_SETTING[ParameterIndex.KEY]:
+                converted = converted + KMLParameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA]
+                data_size = len(converted) + 3
+
+            set_cmd = '<%s:%s:%s>' % (self.convertDecToHex(data_size), param_tuple[ParameterIndex.SET], converted)
             log.trace("IN _build_set_command CMD = '%s'", set_cmd)
         except KeyError:
             raise InstrumentParameterException('Unknown driver parameter. %s' % param)
@@ -1849,7 +1831,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         #self.get_param = param
         self.get_cmd = cmd
 
-        command = '<\x03:%s:%s>' % (cmd, data)
+        command = '<\x03:%s:%s>' % (cmd, self.convertDecToHex(data))
         return command
 
     def build_preset_command(self, cmd, data, val):
@@ -1866,7 +1848,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         #self.get_param = param
         self.get_cmd = cmd
 
-        command = '<\x03:%s:%s>' % (cmd, data)
+        command = '<\x03:%s:%s>' % (cmd, self.convertDecToHex(data))
         return command
 
 
@@ -1894,7 +1876,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         log.trace("GET RESPONSE = " + repr(response))
 
         #Make sure the response is the right format
-        resopnse_striped = '%r' % response.strip()
+        #resopnse_striped = '%r' % response.strip()
+        resopnse_striped = response.strip()
         if resopnse_striped[0] != '<':
             raise InstrumentParameterException('Failed to get a response for lookup of ' + self.get_param
                                                + '  ' + resopnse_striped)
@@ -1910,7 +1893,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
             #parse out parameter value first
 
-            if self.get_param[ParameterIndex.GET] !=  None:
+            if self.get_param[ParameterIndex.GET] ==  None:
                 # No response data to process
                 return
             if self.get_param[ParameterIndex.LENGTH] == None:
@@ -1918,12 +1901,36 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 # get the size of the responding data
                 raw_value = resopnse_striped[self.get_param[ParameterIndex.Start]+ 6 :
                                              len(resopnse_striped) - 2]
+
+                if self.get_param[ParameterIndex.KEY] == KMLParameter.NTP_SETTING[ParameterIndex.KEY]:
+                    self._param_dict.update(str(ord(raw_value[0])), target_params = self.get_param[ParameterIndex.KEY])
+                if self.get_param[ParameterIndex.KEY] == KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]:
+                    self._param_dict.update(raw_value.trim(), target_params = self.get_param[ParameterIndex.KEY])
             else:
                 raw_value = resopnse_striped[self.get_param[ParameterIndex.Start]+ 6 :
                                              self.get_param[ParameterIndex.Start]+
                                              self.get_param[ParameterIndex.LENGTH]+6]
-
-            self._param_dict.update(response, target_params = self.get_param)
+                if len(raw_value) == 1:
+                    self._param_dict.update(str(ord(raw_value)), target_params = self.get_param[ParameterIndex.KEY])
+                else:
+                    if self.get_param[ParameterIndex.KEY] in [KMLParameter.PAN_POSITION[ParameterIndex.KEY],
+                                                              KMLParameter.TILT_POSITION[ParameterIndex.KEY]]:
+                        first = chr(ord(raw_value[0]))
+                        second = chr(ord(raw_value[1]))
+                        third = chr(ord(raw_value[2]))
+                        str(int(first + second + third))
+                        self._param_dict.update(str(int(first + second + third)),
+                                                target_params = self.get_param[ParameterIndex.KEY])
+                    else:
+                        temp_data =''
+                        first_time = True
+                        for x in range(0, len(raw_value)):
+                            if first_time:
+                                fist_time = False
+                            else:
+                                temp_data = temp_data + ':'
+                            temp_data = temp_data + str(ord(raw_value[int(x)]))
+                        self._param_dict.update(temp_data, target_params = self.get_param[ParameterIndex.KEY])
 
         self.get_count = 0
         return response
