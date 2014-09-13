@@ -56,8 +56,8 @@ class KMLPrompt(BaseEnum):
     """
     Device i/o prompts..
     """
-    ACK = '\x06'
-    NAK = '\x15'
+    END = '>'
+
 
 class ParameterIndex(BaseEnum):
     SET = 0
@@ -372,34 +372,36 @@ class KMLParameter(DriverParameter):
                              'AUTO_CAPTURE_DURATION', 3)
 
 class KMLParameter_display(DriverParameter):
-    ACQUIRE_STATUS_INTERVAL =  KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DISPLAY_NAME]
-    AUTO_CAPTURE_DURATION = KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.DISPLAY_NAME]
-    CAMERA_GAIN = KMLParameter.CAMERA_GAIN[ParameterIndex.DISPLAY_NAME]
-    CAMERA_MODE = KMLParameter.CAMERA_MODE[ParameterIndex.DISPLAY_NAME]
-    COMPRESSION_RATIO = KMLParameter.COMPRESSION_RATIO[ParameterIndex.DISPLAY_NAME]
-    FOCUS_POSITION = KMLParameter.FOCUS_POSITION[ParameterIndex.DISPLAY_NAME]
-    FOCUS_SPEED = KMLParameter.FOCUS_SPEED[ParameterIndex.DISPLAY_NAME]
-    FRAME_RATE = KMLParameter.FRAME_RATE[ParameterIndex.DISPLAY_NAME]
-    IMAGE_RESOLUTION = KMLParameter.IMAGE_RESOLUTION[ParameterIndex.DISPLAY_NAME]
-    IRIS_POSITION = KMLParameter.IRIS_POSITION[ParameterIndex.DISPLAY_NAME]
+    ACQUIRE_STATUS_INTERVAL =  KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]
+    AUTO_CAPTURE_DURATION = KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]
+    CAMERA_GAIN = KMLParameter.CAMERA_GAIN[ParameterIndex.KEY]
+    CAMERA_MODE = KMLParameter.CAMERA_MODE[ParameterIndex.KEY]
+    COMPRESSION_RATIO = KMLParameter.COMPRESSION_RATIO[ParameterIndex.KEY]
+    FOCUS_POSITION = KMLParameter.FOCUS_POSITION[ParameterIndex.KEY]
+    FOCUS_SPEED = KMLParameter.FOCUS_SPEED[ParameterIndex.KEY]
+    FRAME_RATE = KMLParameter.FRAME_RATE[ParameterIndex.KEY]
+    IMAGE_RESOLUTION = KMLParameter.IMAGE_RESOLUTION[ParameterIndex.KEY]
+    IRIS_POSITION = KMLParameter.IRIS_POSITION[ParameterIndex.KEY]
 
-    LAMP_BRIGHTNESS = KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.DISPLAY_NAME]
-    NETWORK_DRIVE_LOCATION = KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DISPLAY_NAME]
-    NTP_SETTING = KMLParameter.NTP_SETTING[ParameterIndex.DISPLAY_NAME]
-    PAN_POSITION = KMLParameter.PAN_POSITION[ParameterIndex.DISPLAY_NAME]
-    PAN_SPEED = KMLParameter.PAN_SPEED[ParameterIndex.DISPLAY_NAME]
-    PRESET_NUMBER = KMLParameter.PRESET_NUMBER[ParameterIndex.DISPLAY_NAME]
-    SAMPLE_INTERVAL = KMLParameter.SAMPLE_INTERVAL[ParameterIndex.DISPLAY_NAME]
-    SHUTTER_SPEED = KMLParameter.SHUTTER_SPEED[ParameterIndex.DISPLAY_NAME]
-    SOFT_END_STOPS = KMLParameter.SOFT_END_STOPS[ParameterIndex.DISPLAY_NAME]
-    TILT_POSITION = KMLParameter.TILT_POSITION[ParameterIndex.DISPLAY_NAME]
-    TILT_SPEED = KMLParameter.TILT_SPEED[ParameterIndex.DISPLAY_NAME]
+    LAMP_BRIGHTNESS = KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]
+    NETWORK_DRIVE_LOCATION = KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]
+    NTP_SETTING = KMLParameter.NTP_SETTING[ParameterIndex.KEY]
+    PAN_POSITION = KMLParameter.PAN_POSITION[ParameterIndex.KEY]
+    PAN_SPEED = KMLParameter.PAN_SPEED[ParameterIndex.KEY]
+    PRESET_NUMBER = KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]
+    SAMPLE_INTERVAL = KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]
+    SHUTTER_SPEED = KMLParameter.SHUTTER_SPEED[ParameterIndex.KEY]
+    SOFT_END_STOPS = KMLParameter.SOFT_END_STOPS[ParameterIndex.KEY]
+    TILT_POSITION = KMLParameter.TILT_POSITION[ParameterIndex.KEY]
+    TILT_SPEED = KMLParameter.TILT_SPEED[ParameterIndex.KEY]
 
-    VIDEO_FORWARDING = KMLParameter.VIDEO_FORWARDING[ParameterIndex.DISPLAY_NAME]
-    VIDEO_FORWARDING_TIMEOUT = KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DISPLAY_NAME]
-    WHEN_DISK_IS_FULL = KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.DISPLAY_NAME]
-    ZOOM_POSITION = KMLParameter.ZOOM_POSITION[ParameterIndex.DISPLAY_NAME]
-    ZOOM_SPEED = KMLParameter.ZOOM_SPEED[ParameterIndex.DISPLAY_NAME]
+    VIDEO_FORWARDING = KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]
+    VIDEO_FORWARDING_TIMEOUT = KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]
+    WHEN_DISK_IS_FULL = KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]
+    ZOOM_POSITION = KMLParameter.ZOOM_POSITION[ParameterIndex.KEY]
+    ZOOM_SPEED = KMLParameter.ZOOM_SPEED[ParameterIndex.KEY]
+    AUTO_CAPTURE_DURATION = KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]
+
 
 class KMLInstrumentCmds(BaseEnum):
     """
@@ -575,6 +577,9 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
     """
     Instrument protocol Family SubClass
     """
+
+    ACK = '\x06'
+    NAK = '\x15'
 
     def __init__(self, prompts, newline, driver_event):
         """
@@ -800,7 +805,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         self.disable_autosample_recover = False
 
-    def convertDecToHex(int_value):
+    def convertDecToHex(self, int_value):
         """
         Convert decimal to hex
         """
@@ -924,6 +929,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @throws: InstrumentProtocolException if not in command or streaming
         """
         # Let's give it a try in unknown state
+        log.error("Sung inside apply_startup_params driven")
         if (self.get_current_state() != KMLProtocolState.COMMAND and
                     self.get_current_state() != KMLProtocolState.AUTOSAMPLE):
             raise InstrumentProtocolException("Not in command or autosample state. Unable to apply startup params")
@@ -932,12 +938,14 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         # instrument matches what we think it should be then we
         # don't need to do anything.
 
+        log.error("Sung inside apply_startup_params calling instrument)dirty")
         if not self._instrument_config_dirty():
             return True
 
         error = None
 
         try:
+            log.error("Sung inside apply_startup_params calling _apply_params")
             self._apply_params()
 
         # Catch all error so we can put ourselves back into
@@ -956,23 +964,32 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         """
         log.debug("IN _apply_params")
         config = self.get_startup_config()
+        del config['WHEN_DISK_IS_FULL']
+        del config['NTP_SETTING']
+        log.error("Sung inside _apply_params %r", config)
         # Pass true to _set_params so we know these are startup values
         self._set_params(config, True)
 
-    def _get_params(self):
-        return dir(KMLParameter)
+    # def _get_params(self):
+    #     return dir(KMLParameter)
 
     def _getattr_key(self, attr):
         return getattr(KMLParameter, attr)
 
     def _has_parameter(self, param):
-        return KMLParameter.has(param)
+        #return KMLParameter.has(param)
+        log.error("Sung checking param")
+        log.error("Sung checking param %s", param)
+        return True
+        #return KMLParameter_display.has(param)
+
 
     def _update_params(self, *args, **kwargs):
         """
         Update the parameter dictionary. 
         """
         log.debug("in _update_params")
+        log.error("Sung in _update_params")
         error = None
         results = None
 
@@ -981,12 +998,22 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             old_config = self._param_dict.get_config()
             #kwargs['expected_prompt'] = KMLPrompt.COMMAND
             cmds = self._get_params()
+            log.error("Sung in _update_params %r", cmds)
             results = ""
             for attr in sorted(cmds):
-                if attr not in [ KMLParameter.SAMPLE_INTERVAL, KMLParameter.VIDEO_FORWARDING_TIMEOUT,
-                                 KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLParameter.AUTO_CAPTURE_DURATION,
-                                 KMLParameter.VIDEO_FORWARDING, KMLParameter.PRESET_NUMBER]:
+                log.error("Sung in _update_param %s", attr)
+                if attr not in [ KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY],
+                                 KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
+                                 KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
+                                 KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY],
+                                 KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY],
+                                 KMLParameter.PRESET_NUMBER[ParameterIndex.KEY],
+                                 KMLParameter.NTP_SETTING[ParameterIndex.KEY],
+                                 KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY],
+                                 'ALL']:
+
                     key = self._getattr_key(attr)
+                    log.error("Sung update params %s %s ",attr, key )
                     result = self._do_cmd_resp(KMLInstrumentCmds.GET, key, **kwargs)
                     results += result + NEWLINE
 
@@ -1011,23 +1038,39 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         Issue commands to the instrument to set various parameters
         """
         log.trace("in _set_params")
+        log.error("Sung inside set_params")
         # Retrieve required parameter.
         # Raise if no parameter provided, or not a dict.
         result = None
         try:
             params = args[0]
+            log.error("Sung _set_params params %r", params)
         except IndexError:
             raise InstrumentParameterException('Set command requires a parameter dict.')
 
         log.trace("_set_params calling _verify_not_readonly ARGS = " + repr(args))
         self._verify_not_readonly(*args, **kwargs)
+        log.error("Sung in _set_params, after verifying NOT readOnly %r", params.iteritems())
         for key, val in params.iteritems():
-            if key not in [ KMLParameter.SAMPLE_INTERVAL,KMLParameter.VIDEO_FORWARDING_TIMEOUT,
-                                 KMLParameter.ACQUIRE_STATUS_INTERVAL, KMLParameter.AUTO_CAPTURE_DURATION,
-                                 KMLParameter.VIDEO_FORWARDING, KMLParameter.PRESET_NUMBER]:
+            log.error("Sung in _set_params, %s, %s", key, val)
+            if key not in [ KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY],
+                            KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
+                            KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
+                            KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY],
+                            KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY],
+                            KMLParameter.PRESET_NUMBER[ParameterIndex.KEY],
+                            KMLParameter.NTP_SETTING[ParameterIndex.KEY],
+                            KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY],
+                            'ALL'
+                            ]:
+                log.error("Sung in _set_params, calling do_cmd_resp()")
+                time.sleep(2)
                 result = self._do_cmd_resp(KMLInstrumentCmds.SET, key, val, **kwargs)
+                log.error("Sung in _set_params, after calling do_cmd_resp()")
         log.trace("_set_params calling _update_params")
+        log.error("Sung in _set_params, calling update_params")
         self._update_params()
+        log.error("Sung in _set_params,  after calling update_params")
         return result
 
     def _instrument_config_dirty(self):
@@ -1037,16 +1080,23 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @return: True if the startup config doesn't match the instrument
         @throws: InstrumentParameterException
         """
+        log.error("Sung in _instrument_config_dirty")
         log.trace("in _instrument_config_dirty")
         # Refresh the param dict cache
         #self._update_params()
 
         startup_params = self._param_dict.get_startup_list()
         log.trace("Startup Parameters: %s" % startup_params)
+        log.error("Sung Startup Parameters: %s" % startup_params)
+
 
         for param in startup_params:
-            if not self._has_parameter(param):
-                raise InstrumentParameterException("A param is unknown")
+            log.error("Sung Parameter: %s" % param)
+            log.error("Sung Parameter :: %s" % param)
+            self._has_parameter(param)
+            log.error("Sung Parameter ::: %s" % param)
+            # if not self._has_parameter(param):
+            #     raise InstrumentParameterException("A param is unknown instrument config dirty")
 
             if self._param_dict.get(param) != self._param_dict.get_config_value(param):
                 log.trace("DIRTY: %s %s != %s" % (
@@ -1193,7 +1243,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             error = e
 
         if error:
-            log.error("Error in apply_startup_params: %s", error)
+            log.error("Sung in _handler_autosample_init_params")
+            log.error("Error in init_param in handler_autosample_init_params: %s", error)
             raise error
 
         return next_state, result
@@ -1663,17 +1714,23 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 return attr
         return None
 
-    def _get_response(self, response):
+    def _get_response_(self, response):
         #<size:command:data>
         #throw InstrumentProtocolException
 
         # make sure that the response is right format
+        log.error("Sung get_response %s", response)
         if '<' in response:
+            log.error("Sung get_response2 %s", response)
             if response[0] == '<':
+                log.error("Sung get_response3 %s", response)
                 if response[len(response)-1] == '>':
+                    log.error("Sung get_response4 %s", response)
                     if ':' in response:
+                        log.error("Sung get_response5 %s", response)
                         response.replace('<','')
                         response.replace('>','')
+                        log.error("Sung get_response6 %s", response)
                         return response.split(':')
         # Not valid response
         raise InstrumentProtocolException('Not valid instrument response %s' % response)
@@ -1692,10 +1749,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         if resopnse_striped[len(resopnse_striped) -1] != '>':
             raise InstrumentParameterException('Failed to cmd a response for lookup of ' + self.get_param
                                                + '  ' + resopnse_striped + ' ' + self.get_cmd)
-        if resopnse_striped[3] == KMLPrompt.NAK:
+        if resopnse_striped[3] == self.NAK:
             raise InstrumentProtocolException(
                 'Protocol._parse_set_response : Set command not recognized: %s' + resopnse_striped,
-                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
+                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[7]))
 
     def _build_get_command(self, cmd, param, **kwargs):
         """
@@ -1709,13 +1766,15 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         """
         #kwargs['expected_prompt'] = KMLPrompt.COMMAND
         # try:
-        param_tuple = self._get_param_tuple(param)
-        self.get_param = param_tuple
+        #param_tuple = self._get_param_tuple(param)
+        log.error("Sung build_command %r", param)
+        param_tuple = param
+        self.get_param = param[ParameterIndex.KEY]
         self.get_cmd = cmd
         #     get_cmd = param + '?' + NEWLINE
         # except KeyError:
         #     raise InstrumentParameterException('Unknown driver parameter.. %s' % param)
-
+        log.error("Sung build_command %s", param_tuple[ParameterIndex.GET])
         return param_tuple[ParameterIndex.GET]
 
     def _build_set_command(self, cmd, param, val):
@@ -1728,14 +1787,17 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         @throws InstrumentProtocolException if the parameter is not valid or
         if the formatting function could not accept the value passed.
         """
-        param_tuple = self._get_param_tuple(param)
-        self.get_param = param_tuple
+        log.error("Sung Build_set_command")
+        #param_tuple = self._get_param_tuple(param)
+        #self.get_param = param_tuple
+        self.get_param = param
         self.get_cmd = cmd
         data_size = 0
         input_data =[]
-        val = val.trim()
+        #val = val.trim()
 
         try:
+            log.error("Sung Build_set_command2 %s", param)
             if self.get_param[ParameterIndex.KEY] in [KMLParameter.PAN_POSITION[ParameterIndex.KEY],
                                                               KMLParameter.TILT_POSITION[ParameterIndex.KEY]]:
                 if len(val) == 1:
@@ -1746,20 +1808,41 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                     val = ord('0') + ':' + ord(val[0]) + ':' + ord(val[1]) + ':' + ord(val[2])
                 else:
                     raise InstrumentParameterException('The input cannot be more than 3 bytes. %s' % param)
+            log.error("Sung Build_set_command3 %r", val)
             input_data = val.split(':')
             input_data_size = len(input_data)
+            log.error("Sung Build_set_command3.4 %r",input_data )
             converted = ''
             for x in range(0,input_data_size):
+                log.error("Sung Build_set_command4 %s", x)
                 #converted = converted + self.convert(int(input_data[int(x)].trim()))
-                converted = converted + self.convertDecToHex(int(input_data[int(x)]))
+                #if input_data_size == 1:
+                if len(input_data[int(x)]) == 1:
+                    log.error("Sung Build_set_command single %s", ord(input_data[int(x)]))
+                    converted = converted + self.convertDecToHex(ord(input_data[int(x)]))
+                else:
+                    input_data_size = 0
+                    for y in range(0,len(input_data[int(x)])):
+                        input_data_size = input_data_size + 1
+                        log.error("Sung Build_set_command multi %s", (input_data[int(x)])[int(y)])
+                        converted = converted + self.convertDecToHex(ord((input_data[int(x)])[int(y)]))
+                #else:
 
+            log.error("Sung Build_set_command4.4 %r",converted)
             data_size = input_data_size + 3
-
+            log.error("Sung Build_set_command5 data size %s", data_size)
             if param == KMLParameter.NTP_SETTING[ParameterIndex.KEY]:
                 converted = converted + KMLParameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA]
                 data_size = len(converted) + 3
-
+            log.error("Sung Build_set_command6")
+            param_tuple = self._get_param(param)
+            #KMLParameter.ZOOM_SPEED
+            log.error("Sung Build_set_command6.1 %r", param_tuple)
+            log.error("Sung Build_set_command6.1 %r", param_tuple[ParameterIndex.SET])
+            #log.error("Sung Build_set_command6.1 %r", KMLParameter.ZOOM_SPEED[ParameterIndex.SET])
+            #KMLParameter.
             set_cmd = '<%s:%s:%s>' % (self.convertDecToHex(data_size), param_tuple[ParameterIndex.SET], converted)
+            log.error("Sung Build_set_command7 %r", set_cmd)
             log.trace("IN _build_set_command CMD = '%s'", set_cmd)
         except KeyError:
             raise InstrumentParameterException('Unknown driver parameter. %s' % param)
@@ -1854,20 +1937,28 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
     def _parse_set_response(self, response, prompt):
 
+        log.error("Sung SET RESPONSE = " + repr(response))
+        log.error("Sung SET RESPONSE = %s", response)
         log.trace("SET RESPONSE = " + repr(response))
 
         #Make sure the response is the right format
-        resopnse_striped = '%r' % response.strip()
+        resopnse_striped = '%s' % response.strip()
+        log.error("Sung SET RESPONSE striped")
         if resopnse_striped[0] != '<':
-            raise InstrumentParameterException('Failed to set a response for lookup of ' + self.get_param
+            log.error("Sung SET RESPONSE, < is okay ")
+            raise InstrumentParameterException('Failed to set a response for lookup of <' + self.get_param
                                                + '  ' + resopnse_striped)
         if resopnse_striped[len(resopnse_striped) -1] != '>':
-            raise InstrumentParameterException('Failed to set a response for lookup of ' + self.get_param
+            log.error("Sung SET RESPONSE, > is okay ")
+            raise InstrumentParameterException('Failed to set a response for lookup of > ' + self.get_param
                                                + '  ' + resopnse_striped)
-        if resopnse_striped[3] == KMLPrompt.NAK:
+        if resopnse_striped[3] == self.NAK:
+            reason = self.CAMDS_failure_message(resopnse_striped[7])
             raise InstrumentProtocolException(
-                'Protocol._parse_set_response : Set command not recognized: %s' + resopnse_striped,
-                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
+                'Protocol._parse_set_response : Set command not recognized: ' + reason)
+
+        # else:
+        #     log.error("Sung SET RESPONSE, None of the cases ")
 
         #self.get_count = 0
         return response
@@ -1884,12 +1975,12 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         if resopnse_striped[len(resopnse_striped) -1] != '>':
             raise InstrumentParameterException('Failed to get a response for lookup of ' + self.get_param
                                                + '  ' + resopnse_striped)
-        if resopnse_striped[3] == KMLPrompt.NAK:
+        if resopnse_striped[3] == self.NAK:
             raise InstrumentProtocolException(
                 'Protocol._parse_set_response : get command not recognized: %s' + resopnse_striped,
-                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
+                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[7]))
 
-        if resopnse_striped[3] == KMLPrompt.ACK:
+        if resopnse_striped[3] == self.ACK:
 
             #parse out parameter value first
 
@@ -1946,10 +2037,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         if resopnse_striped[len(resopnse_striped) -1] != '>':
             raise InstrumentParameterException('Failed to get a response for lookup of ' + self.get_param
                                                + '  ' + resopnse_striped)
-        if resopnse_striped[3] == KMLPrompt.NAK:
+        if resopnse_striped[3] == self.NAK:
             raise InstrumentProtocolException(
                 'Protocol._parse_set_response : get command not recognized: %s' + resopnse_striped,
-                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[5]))
+                + ' : ' + self.get_param + ' :' +  self.CAMDS_failure_message(resopnse_striped[7]))
 
         self.get_count = 0
         return response
@@ -1977,16 +2068,33 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
             return "Command cannot be processed because the camera is in an incorrect state"
         if error_code == '\x05':
             return "Invalid data values"
-        if error_code == '\x05':
+        if error_code == '\x06':
             return "Camera Busy Processing"
         return "Unknown"
 
     def _get_params(self):
         #return dir(KMLParameter)
+        #return dir(KMLParameter)
         return KMLParameter.list()
 
-    def _getattr_key(self, attr):
-        return getattr(KMLParameter, attr)
+    def _get_param(self, key):
+        log.error("Sung _get_param %s", key)
+        param_dict = KMLParameter.dict()
+        return param_dict.get(key)
+        log.error("Sung param_list %r", param_list)
+        # for x in param_list:
+        #     log.error("Sung param_list item %r", x)
+        #     log.error("Sung param_list item2 %r", x[ParameterIndex.KEY])
+        #     if x == key:
+        #         return x
+        # return None
 
-    def _has_parameter(self, param):
-        return KMLParameter.has(param)
+
+    # def _getattr_key(self, attr):
+    #     return getattr(KMLParameter, attr)
+
+    # def _has_parameter(self, param):
+    #     #return KMLParameter.has(param)
+    #     log.error("Sung checking param %s", param)
+    #     return KMLParameter_display.has(param)
+

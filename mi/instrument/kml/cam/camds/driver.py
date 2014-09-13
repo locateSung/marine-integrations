@@ -7,6 +7,7 @@
 """
 from mi.core.common import BaseEnum
 import time
+import re
 import base64
 from mi.instrument.kml.driver import KMLScheduledJob, ParameterIndex
 from mi.instrument.kml.driver import KMLCapability
@@ -21,12 +22,15 @@ from mi.core.instrument.instrument_driver import DriverAsyncEvent
 from mi.core.instrument.instrument_driver import DriverConnectionState
 from mi.core.exceptions import InstrumentConnectionException
 from mi.core.exceptions import InstrumentParameterException
+from mi.core.exceptions import InstrumentProtocolException
+from mi.core.exceptions import InstrumentTimeoutException
+from mi.core.common import BaseEnum, InstErrorCode
 
 from mi.core.instrument.instrument_driver import ResourceAgentEvent
 from mi.core.instrument.port_agent_client import PortAgentClient
 from mi.instrument.kml.particles import DataParticleType, CAMDS_SNAPSHOT_MATCHER, CAMDS_IMAGE_METADATA, \
     CAMDS_STOP_CAPTURING, CAMDS_START_CAPTURING, CAMDS_SNAPSHOT_MATCHER_COM, CAMDS_STOP_CAPTURING_COM,\
-    CAMDS_START_CAPTURING_COM
+    CAMDS_START_CAPTURING_COM, CAMDS_VIDEO
 from mi.core.instrument.data_particle import RawDataParticle
 
 from mi.core.log import get_logger
@@ -52,6 +56,7 @@ DEFAULT_CMD_TIMEOUT = 20
 DEFAULT_WRITE_DELAY = 0
 
 ZERO_TIME_INTERVAL = '00:00:00'
+RE_PATTERN = type(re.compile(""))
 
 
 # ##############################################################################
@@ -503,11 +508,11 @@ class CAMDSProtocol(KMLProtocol):
         Publish raw data
         @param: port_agent_packet port agent packet containing raw
         """
-        particle = RawDataParticle(port_agent_packet.get_as_dict(),
+        particle = CAMDS_VIDEO(port_agent_packet.get_as_dict(),
                                            port_timestamp=port_agent_packet.get_timestamp())
 
         parsed_sample = particle.generate()
-        parsed_sample._data_particle_type = DataParticleType.CAMDS_VIDEO
+        #parsed_sample._data_particle_type = DataParticleType.CAMDS_VIDEO
         if self._driver_event:
             if(self.video_fowarding_flag):
                 self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
@@ -577,11 +582,222 @@ class CAMDSProtocol(KMLProtocol):
 
         return s
 
+    def _send_wakeup(self):
+        """
+        Send a wakeup to the device. Overridden by device specific
+        subclasses.
+        """
+        log.error("Sung send:")
+        self._connection.send(NEWLINE)
+
+    def _wakeup(self, timeout, delay=1):
+        """
+        Clear buffers and send a wakeup command to the instrument
+        @param timeout The timeout to wake the device.
+        @param delay The time to wait between consecutive wakeups.
+        @throw InstrumentTimeoutException if the device could not be woken.
+        """
+        # Clear the prompt buffer.
+        log.error("Sung wakeup 1")
+        log.debug("clearing promptbuf: %s", self._promptbuf)
+        self._promptbuf = ''
+
+        # Grab time for timeout.
+        starttime = time.time()
+        log.error("Sung wakeup 2")
+
+        while True:
+            log.error("Sung wakeup 3")
+            # Send a line return and wait a sec.
+            log.trace('Sending wakeup. timeout=%s', timeout)
+            log.error("Sung send wakeup")
+            self._send_wakeup()
+            time.sleep(delay)
+            log.error("Sung wakeup 4")
+
+            log.debug("Prompts: %s", self._get_prompts())
+
+            for item in self._get_prompts():
+                log.debug("buffer: %s", self._promptbuf)
+                log.error("Sung buffer: %s", self._promptbuf)
+                log.debug("find prompt: %s", item)
+                log.error("Sung find prompt: %s", item)
+                index = self._promptbuf.find(item)
+                log.debug("Got prompt (index: %s): %s ", index, repr(self._promptbuf))
+                if index >= 0:
+                    log.trace('wakeup got prompt: %s', repr(item))
+                    return item
+            log.debug("Searched for all prompts")
+            log.error("Sung wakeup 5.1 %s", starttime + timeout )
+            log.error("Sung wakeup 5.2 %s", time.time())
+
+
+            if time.time() > starttime + timeout:
+                log.error("Sung wakeup 5 exception")
+                raise InstrumentTimeoutException("in _wakeup()")
+
+    def _get_prompts(self):
+        """
+        Return a list of prompts order from longest to shortest.  The
+        assumption is the longer is more specific.
+        @return: list of prompts orders by length.
+        """
+        if isinstance(self._prompts, list):
+            prompts = self._prompts
+        else:
+            prompts = self._prompts.list()
+
+        prompts.sort(lambda x, y: cmp(len(y), len(x)))
+
+        return prompts
+
+    def _do_cmd_resp(self, cmd, *args, **kwargs):
+        """
+        Perform a command-response on the device.
+        @param cmd The command to execute.
+        @param args positional arguments to pass to the build handler.
+        @param write_delay kwarg for the amount of delay in seconds to pause
+        between each character. If none supplied, the DEFAULT_WRITE_DELAY
+        value will be used.
+        @param timeout optional wakeup and command timeout via kwargs.
+        @param expected_prompt kwarg offering a specific prompt to look for
+        other than the ones in the protocol class itself.
+        @param response_regex kwarg with a compiled regex for the response to
+        match. Groups that match will be returned as a string.
+        Cannot be supplied with expected_prompt. May be helpful for
+        instruments that do not have a prompt.
+        @retval resp_result The (possibly parsed) response result including the
+        first instance of the prompt matched. If a regex was used, the prompt
+        will be an empty string and the response will be the joined collection
+        of matched groups.
+        @raises InstrumentTimeoutException if the response did not occur in time.
+        @raises InstrumentProtocolException if command could not be built or if response
+        was not recognized.
+        """
+
+        # Get timeout and initialize response.
+        log.error("Sung do_cmd_response")
+        timeout = kwargs.get('timeout', DEFAULT_CMD_TIMEOUT)
+        expected_prompt = kwargs.get('expected_prompt', None)
+        response_regex = kwargs.get('response_regex', None)
+        write_delay = kwargs.get('write_delay', DEFAULT_WRITE_DELAY)
+
+        if response_regex and not isinstance(response_regex, RE_PATTERN):
+            raise InstrumentProtocolException('Response regex is not a compiled pattern!')
+
+        if expected_prompt and response_regex:
+            raise InstrumentProtocolException('Cannot supply both regex and expected prompt!')
+
+        # Get the build handler.
+        build_handler = self._build_handlers.get(cmd, None)
+        if not build_handler:
+            raise InstrumentProtocolException('Cannot build command: %s' % cmd)
+
+        log.error("Sung do_cmd_response calling builder handler %s", cmd)
+        cmd_line = build_handler(cmd, *args)
+        log.error("Sung do_cmd_response calling builder handler %s", cmd_line)
+        # Wakeup the device, pass up exception if timeout
+        log.error("Sung do_cmd_response before calling wakeup %s", timeout)
+        self._wakeup(timeout)
+        log.error("Sung do_cmd_response after calling wakeup %s", timeout)
+
+        # Clear line and prompt buffers for result.
+        self._linebuf = ''
+        self._promptbuf = ''
+
+        # Send command.
+        log.debug('_do_cmd_resp: %s, timeout=%s, write_delay=%s, expected_prompt=%s, response_regex=%s',
+                        repr(cmd_line), timeout, write_delay, expected_prompt, response_regex)
+
+        if (write_delay == 0):
+            log.error("Sung do_cmd_response send command")
+            self._connection.send(cmd_line)
+            log.error("Sung do_cmd_response after send command")
+        else:
+            for char in cmd_line:
+                self._connection.send(char)
+                time.sleep(write_delay)
+
+        # Wait for the prompt, prepare result and return, timeout exception
+        if response_regex:
+            prompt = ""
+            log.error("Sung do_cmd_response calling get_response 1")
+            result_tuple = self._get_response(timeout,
+                                              response_regex=response_regex,
+                                              expected_prompt=expected_prompt)
+            result = "".join(result_tuple)
+        else:
+            log.error("Sung do_cmd_response calling get_response 2")
+            (prompt, result) = self._get_response(timeout,
+                                                  expected_prompt=expected_prompt)
+
+        log.error("Sung do_cmd_response get response handler %s", result)
+        resp_handler = self._response_handlers.get((self.get_current_state(), cmd), None) or \
+            self._response_handlers.get(cmd, None)
+        log.error("Sung do_cmd_response get response handler after")
+        resp_result = None
+        if resp_handler:
+            log.error("Sung do_cmd_response calling get_response handler")
+            resp_result = resp_handler(result, prompt)
+
+        return resp_result
+
+    def _do_cmd_no_resp(self, cmd, *args, **kwargs):
+        """
+        Issue a command to the instrument after a wake up and clearing of
+        buffers. No response is handled as a result of the command.
+
+        @param cmd The command to execute.
+        @param args positional arguments to pass to the build handler.
+        @param timeout=timeout optional wakeup timeout.
+        @raises InstrumentTimeoutException if the response did not occur in time.
+        @raises InstrumentProtocolException if command could not be built.
+        """
+
+        timeout = kwargs.get('timeout', DEFAULT_CMD_TIMEOUT)
+        write_delay = kwargs.get('write_delay', DEFAULT_WRITE_DELAY)
+
+        build_handler = self._build_handlers.get(cmd, None)
+        if not build_handler:
+            log.error('_do_cmd_no_resp: no handler for command: %s' % (cmd))
+            raise InstrumentProtocolException(error_code=InstErrorCode.BAD_DRIVER_COMMAND)
+        cmd_line = build_handler(cmd, *args)
+
+        # Wakeup the device, timeout exception as needed
+        prompt = self._wakeup(timeout)
+
+        # Clear line and prompt buffers for result.
+
+        self._linebuf = ''
+        self._promptbuf = ''
+
+        # Send command.
+        log.debug('_do_cmd_no_resp: %s, timeout=%s' % (repr(cmd_line), timeout))
+        if (write_delay == 0):
+            self._connection.send(cmd_line)
+        else:
+            for char in cmd_line:
+                self._connection.send(char)
+                time.sleep(write_delay)
+
+    def _do_cmd_direct(self, cmd):
+        """
+        Issue an untranslated command to the instrument. No response is handled
+        as a result of the command.
+
+        @param cmd The high level command to issue
+        """
+
+        # Send command.
+        log.debug('_do_cmd_direct: <%s>' % cmd)
+        self._connection.send(cmd)
+
 
 class Prompt(KMLPrompt):
     """
     Device i/o prompts..
     """
+    COMMAND = '<::>'
 
 
 class Parameter(KMLParameter):
@@ -674,6 +890,7 @@ class Protocol(CAMDSProtocol):
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
                              default_value=Parameter.NTP_SETTING[ParameterIndex.D_DEFAULT])
+                             #default_value=None)
 
         self._param_dict.add(Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY],
                              r'NOT USED',
@@ -696,6 +913,7 @@ class Protocol(CAMDSProtocol):
                              startup_param=False,
                              direct_access=True,
                              visibility=ParameterDictVisibility.READ_ONLY,
+                             #default_value=None)
                              default_value=Parameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT])
 
         self._param_dict.add(Parameter.CAMERA_MODE[ParameterIndex.KEY],
@@ -975,3 +1193,4 @@ class Protocol(CAMDSProtocol):
         return_dict[ConfigMetadataKey.PARAMETERS] = self._param_dict.generate_dict()
 
         return return_dict
+
