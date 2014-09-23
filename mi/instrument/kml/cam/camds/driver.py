@@ -587,7 +587,7 @@ class CAMDSProtocol(KMLProtocol):
         Send a wakeup to the device. Overridden by device specific
         subclasses.
         """
-        log.error("Sung send:")
+        log.error("Sung send NEWLINE:")
         self._connection.send(NEWLINE)
 
     def _wakeup(self, timeout, delay=1):
@@ -619,13 +619,14 @@ class CAMDSProtocol(KMLProtocol):
 
             for item in self._get_prompts():
                 log.debug("buffer: %s", self._promptbuf)
-                log.error("Sung buffer: %s", self._promptbuf)
+                log.error("Sung buffer: %r", self._promptbuf)
                 log.debug("find prompt: %s", item)
-                log.error("Sung find prompt: %s", item)
+                log.error("Sung find prompt: %r", item)
                 index = self._promptbuf.find(item)
                 log.debug("Got prompt (index: %s): %s ", index, repr(self._promptbuf))
                 if index >= 0:
                     log.trace('wakeup got prompt: %s', repr(item))
+                    log.error('Sung wakeup got prompt: %s', repr(item))
                     return item
             log.debug("Searched for all prompts")
             log.error("Sung wakeup 5.1 %s", starttime + timeout )
@@ -701,6 +702,8 @@ class CAMDSProtocol(KMLProtocol):
         self._wakeup(timeout)
         log.error("Sung do_cmd_response after calling wakeup %s", timeout)
 
+        #time.sleep(2)
+
         # Clear line and prompt buffers for result.
         self._linebuf = ''
         self._promptbuf = ''
@@ -710,7 +713,9 @@ class CAMDSProtocol(KMLProtocol):
                         repr(cmd_line), timeout, write_delay, expected_prompt, response_regex)
 
         if (write_delay == 0):
-            log.error("Sung do_cmd_response send command")
+            log.error("Sung do_cmd_response send command %r", cmd_line)
+            log.error("Sung do_cmd_response send command size %s", len(cmd_line))
+
             self._connection.send(cmd_line)
             log.error("Sung do_cmd_response after send command")
         else:
@@ -797,7 +802,7 @@ class Prompt(KMLPrompt):
     """
     Device i/o prompts..
     """
-    COMMAND = '<::>'
+    COMMAND = '<\x03:\x15:\x02>'
 
 
 class Parameter(KMLParameter):

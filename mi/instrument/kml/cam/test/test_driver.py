@@ -29,6 +29,7 @@ from mi.instrument.kml.particles import DataParticleType
 from mi.instrument.kml.driver import KMLProtocolState
 from mi.instrument.kml.driver import KMLProtocolEvent
 from mi.instrument.kml.driver import KMLParameter
+from mi.instrument.kml.driver import ParameterIndex
 
 from mi.core.exceptions import InstrumentCommandException
 
@@ -91,6 +92,8 @@ class CAMDriverIntegrationTest(KMLIntegrationTest):
         """
         self.assert_initialize_driver()
         reply = self.driver_client.cmd_dvr('get_resource', KMLParameter.ALL)
+        log.error("Sung get_resource %s", repr(reply))
+
         self.assert_driver_parameters(reply, True)
 
     def test_break(self):
@@ -112,48 +115,18 @@ class CAMDriverIntegrationTest(KMLIntegrationTest):
         self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE, state=KMLProtocolState.AUTOSAMPLE,
                                    delay=1)
         self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE, state=KMLProtocolState.COMMAND, delay=1)
-        self.assert_driver_command(KMLProtocolEvent.GET_CALIBRATION)
-        self.assert_driver_command(KMLProtocolEvent.GET_CONFIGURATION)
-        self.assert_driver_command(KMLProtocolEvent.CLOCK_SYNC)
-        self.assert_driver_command(KMLProtocolEvent.SCHEDULED_CLOCK_SYNC)
-        self.assert_driver_command(KMLProtocolEvent.SAVE_SETUP_TO_RAM,
-                                   expected="Parameters saved as USER defaults")
-        self.assert_driver_command(KMLProtocolEvent.GET_ERROR_STATUS_WORD, regex='^........')
-        self.assert_driver_command(KMLProtocolEvent.CLEAR_ERROR_STATUS_WORD, regex='^Error Status Word Cleared')
-        self.assert_driver_command(KMLProtocolEvent.GET_FAULT_LOG, regex='^Total Unique Faults   =.*')
-        self.assert_driver_command(KMLProtocolEvent.CLEAR_FAULT_LOG,
-                                   expected='FC ..........\r\n Fault Log Cleared.\r\nClearing buffer @0x00801000\r\nDone [i=2048].\r\n')
-        self.assert_driver_command(KMLProtocolEvent.RUN_TEST_200, regex='^  Ambient  Temperature =')
-        self.assert_driver_command(KMLProtocolEvent.USER_SETS)
-        self.assert_driver_command(KMLProtocolEvent.FACTORY_SETS)
+        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_SAMPLE)
+        self.assert_driver_command(KMLProtocolEvent.LAMP_ON)
+        self.assert_driver_command(KMLProtocolEvent.LAMP_OFF)
+        self.assert_driver_command(KMLProtocolEvent.LASER_1_ON)
+        self.assert_driver_command(KMLProtocolEvent.LASER_1_OFF)
+        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_ON)
+        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_OFF)
         self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS)
-
-        ####
-        # Test in streaming mode
-        ####
-        # Put us in streaming
-        # self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE, state=TeledyneProtocolState.AUTOSAMPLE,
-        #                            delay=1)
-        self.assert_driver_command_exception(KMLProtocolEvent.SAVE_SETUP_TO_RAM,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.GET_ERROR_STATUS_WORD,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.CLEAR_ERROR_STATUS_WORD,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.GET_FAULT_LOG,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.CLEAR_FAULT_LOG,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.RUN_TEST_200,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command_exception(KMLProtocolEvent.ACQUIRE_STATUS,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command(KMLProtocolEvent.SCHEDULED_CLOCK_SYNC)
-        self.assert_driver_command_exception(KMLProtocolEvent.CLOCK_SYNC,
-                                             exception_class=InstrumentCommandException)
-        self.assert_driver_command(KMLProtocolEvent.GET_CALIBRATION, regex=r'Calibration date and time:')
-        self.assert_driver_command(KMLProtocolEvent.GET_CONFIGURATION, regex=r' Instrument S/N')
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE, state=KMLProtocolState.COMMAND, delay=1)
+        self.assert_driver_command(KMLProtocolEvent.LASER_2_ON)
+        self.assert_driver_command(KMLProtocolEvent.LASER_2_OFF)
+        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_ON)
+        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_OFF)
 
         ####
         # Test a bad command
@@ -161,65 +134,48 @@ class CAMDriverIntegrationTest(KMLIntegrationTest):
         self.assert_driver_command_exception('ima_bad_command', exception_class=InstrumentCommandException)
 
     #@unittest.skip('It takes many hours for this test')
-    def test_startup_params(self):
-        """
-        Verify that startup parameters are applied correctly. Generally this
-        happens in the driver discovery method.
-
-        since nose orders the tests by ascii value this should run first.
-        """
-        self.assert_initialize_driver()
-
-        get_values = {
-            KMLParameter.SERIAL_FLOW_CONTROL: '11110',
-            KMLParameter.BANNER: False,
-            KMLParameter.INSTRUMENT_ID: 0,
-            KMLParameter.SLEEP_ENABLE: 0,
-            KMLParameter.SAVE_NVRAM_TO_RECORDER: True,
-            KMLParameter.POLLED_MODE: False,
-            KMLParameter.XMIT_POWER: 255,
-            KMLParameter.SPEED_OF_SOUND: 1485,
-            KMLParameter.PITCH: 0,
-            KMLParameter.ROLL: 0,
-            KMLParameter.SALINITY: 35,
-            KMLParameter.TIME_PER_ENSEMBLE: '00:00:00.00',
-            KMLParameter.TIME_PER_PING: '00:01.00',
-            KMLParameter.FALSE_TARGET_THRESHOLD: '050,001',
-            KMLParameter.BANDWIDTH_CONTROL: 0,
-            # WorkhorseParameter.CORRELATION_THRESHOLD: 64,
-            # WorkhorseParameter.SERIAL_OUT_FW_SWITCHES: '111100000',
-            # WorkhorseParameter.ERROR_VELOCITY_THRESHOLD: 2000,
-            # WorkhorseParameter.CLIP_DATA_PAST_BOTTOM: False,
-            # WorkhorseParameter.RECEIVER_GAIN_SELECT: 1,
-            # WorkhorseParameter.PINGS_PER_ENSEMBLE: 1,
-            # WorkhorseParameter.TRANSMIT_LENGTH: 0,
-            # WorkhorseParameter.PING_WEIGHT: 0,
-            # WorkhorseParameter.AMBIGUITY_VELOCITY: 175,
-            # WorkhorseParameter.SERIAL_DATA_OUT: '000 000 000',
-            # WorkhorseParameter.LATENCY_TRIGGER: False,
-            # WorkhorseParameter.HEADING_ALIGNMENT: +00000,
-            # WorkhorseParameter.HEADING_BIAS: +00000,
-            # WorkhorseParameter.DATA_STREAM_SELECTION: 0,
-            # WorkhorseParameter.ENSEMBLE_PER_BURST: 0,
-            # WorkhorseParameter.SAMPLE_AMBIENT_SOUND: False,
-            # WorkhorseParameter.BUFFERED_OUTPUT_PERIOD: '00:00:00'
-        }
-        new_set = {
-            'SERIAL_FLOW_CONTROL': '11110',
-            'BANNER': 1,
-            'SAVE_NVRAM_TO_RECORDER': True,  # Immutable.
-            'PITCH': 1,
-            'ROLL': 1
-        }
-        # Change the values of these parameters to something before the
-        # driver is reinitialized.  They should be blown away on reinit.
-        new_values = {}
-
-        p = KMLParameter.dict()
-        for k, v in new_set.items():
-            if k not in ('BANNER', 'SERIAL_FLOW_CONTROL', 'SAVE_NVRAM_TO_RECORDER', 'TIME'):
-                new_values[p[k]] = v
-        self.assert_startup_parameters(self.assert_driver_parameters, new_values, get_values)
+    # def test_startup_params(self):
+    #     """
+    #     Verify that startup parameters are applied correctly. Generally this
+    #     happens in the driver discovery method.
+    #
+    #     since nose orders the tests by ascii value this should run first.
+    #     """
+    #     self.assert_initialize_driver()
+    #
+    #     get_values = {
+    #         KMLParameter.FRAME_RATE[ParameterIndex.KEY]: 30,
+    #         KMLParameter.ZOOM_SPEED[ParameterIndex.KEY]: 0,
+    #         KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]: '00:00:00',
+    #         KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]: 3,
+    #         KMLParameter.CAMERA_GAIN[ParameterIndex.KEY]: 255,
+    #         KMLParameter.CAMERA_MODE[ParameterIndex.KEY]: 9,
+    #         KMLParameter.COMPRESSION_RATIO[ParameterIndex.KEY]: 100,
+    #         KMLParameter.FOCUS_POSITION[ParameterIndex.KEY]: 100,
+    #         KMLParameter.FOCUS_SPEED[ParameterIndex.KEY]: 0,
+    #         KMLParameter.IMAGE_RESOLUTION[ParameterIndex.KEY]: 1,
+    #         KMLParameter.IRIS_POSITION[ParameterIndex.KEY]: 8,
+    #         KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]: '3:50',
+    #         KMLParameter.PAN_POSITION[ParameterIndex.KEY]: 90,
+    #         KMLParameter.PAN_SPEED[ParameterIndex.KEY]: 50,
+    #
+    #     }
+    #     new_set = {
+    #         'SERIAL_FLOW_CONTROL': '11110',
+    #         'BANNER': 1,
+    #         'SAVE_NVRAM_TO_RECORDER': True,  # Immutable.
+    #         'PITCH': 1,
+    #         'ROLL': 1
+    #     }
+    #     # Change the values of these parameters to something before the
+    #     # driver is reinitialized.  They should be blown away on reinit.
+    #     new_values = {}
+    #
+    #     p = KMLParameter.dict()
+    #     for k, v in new_set.items():
+    #         if k not in ('BANNER', 'SERIAL_FLOW_CONTROL', 'SAVE_NVRAM_TO_RECORDER', 'TIME'):
+    #             new_values[(p[k])[ParameterIndex.KEY]] = v
+    #     self.assert_startup_parameters(self.assert_driver_parameters, new_values, get_values)
 
     def assert_clock_sync(self):
         """

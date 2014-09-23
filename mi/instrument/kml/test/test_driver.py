@@ -23,7 +23,7 @@ from mi.idk.unit_test import InstrumentDriverPublicationTestCase
 from mi.core.exceptions import NotImplementedException
 from mi.instrument.kml.particles import DataParticleType
 
-from mi.instrument.kml.driver import KMLProtocolState
+from mi.instrument.kml.driver import KMLProtocolState, ParameterIndex
 from mi.instrument.kml.driver import KMLProtocolEvent
 from mi.instrument.kml.driver import KMLParameter
 
@@ -148,10 +148,10 @@ class KMLIntegrationTest(InstrumentDriverIntegrationTestCase):
         Verify the scheduled clock sync is triggered and functions as expected
         """
         self.assert_initialize_driver()
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:04')
-        time.sleep(10)
+        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:10')
+        time.sleep(15)
 
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:00')
+        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:00')
         self.assert_current_state(KMLProtocolState.COMMAND)
 
     def test_scheduled_interval_acquire_status_command(self):

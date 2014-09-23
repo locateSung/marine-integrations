@@ -47,7 +47,7 @@ from mi.instrument.kml.cam.camds.driver import KMLPrompt, InstrumentDriver, Prot
 from mi.instrument.kml.driver import KMLProtocolEvent
 from mi.instrument.kml.driver import KMLScheduledJob
 from mi.instrument.kml.driver import KMLCapability
-from mi.instrument.kml.cam.camds.driver import InstrumentCmds, ProtocolState, ProtocolEvent,Parameter, Capability
+from mi.instrument.kml.cam.camds.driver import InstrumentCmds, ProtocolState, ProtocolEvent, Parameter, Capability
                                                 #KMLParameter_display
 
 # from mi.instrument.teledyne.particles import ADCP_PD0_PARSED_KEY
@@ -444,7 +444,7 @@ class ADCPTMixin(DriverTestMixin):
         """
         log.debug("assert_driver_parameters current_parameters = " + str(current_parameters))
         temp_parameters = copy.deepcopy(self._driver_parameters)
-        temp_parameters.update(self._driver_parameters_slave)
+        temp_parameters.update(self._driver_parameters)
         self.assert_parameters(current_parameters, temp_parameters, verify_values)
 
     def assert_health_data(self, data_particle, verify_values=True):
@@ -1418,104 +1418,30 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         self._tst_set_ping_weight()
         self._tst_set_ambiguity_velocity()
 
-    @unittest.skip('It takes many hours for this test')
-    def test_set_ranges_slave(self):
+    # ReadOnly parameter setting exception tests
+    def test_set_parameter_test(self):
         self.assert_initialize_driver()
 
-        self._tst_set_xmit_power_slave()
-        self._tst_set_speed_of_sound_slave()
-        self._tst_set_pitch_slave()
-        self._tst_set_roll_slave()
-        self._tst_set_salinity_slave()
-        self._tst_set_sensor_source_slave()
-        self._tst_set_time_per_ensemble_slave()
-        self._tst_set_false_target_threshold_slave()
-        self._tst_set_bandwidth_control_slave()
-        self._tst_set_correlation_threshold_slave()
-        self._tst_set_error_velocity_threshold_slave()
-        self._tst_set_blank_after_transmit_slave()
-        self._tst_set_clip_data_past_bottom_slave()
-        self._tst_set_receiver_gain_select_slave()
-        self._tst_set_number_of_depth_cells_slave()
-        self._tst_set_pings_per_ensemble_slave()
-        self._tst_set_depth_cell_size_slave()
-        self._tst_set_transmit_length_slave()
-        self._tst_set_ping_weight_slave()
-        self._tst_set_ambiguity_velocity_slave()
-
-    # # ReadOnly parameter setting exception tests
-    # def test_set_parameter_test_slave(self):
-    #     self.assert_initialize_driver()
-    #
-    #     self.assert_set_exception(TeledyneParameter2.HEADING_ALIGNMENT, +10000)
-    #     self.assert_set_exception(TeledyneParameter2.HEADING_ALIGNMENT, +40000)
-    #     self.assert_set_exception(TeledyneParameter2.ENSEMBLE_PER_BURST, 600)
-    #     self.assert_set_exception(TeledyneParameter2.ENSEMBLE_PER_BURST, 70000)
-    #     self.assert_set_exception(TeledyneParameter2.LATENCY_TRIGGER, 1)
-    #     self.assert_set_exception(TeledyneParameter2.DATA_STREAM_SELECTION, 10)
-    #     self.assert_set_exception(TeledyneParameter2.DATA_STREAM_SELECTION, 19)
-    #     self.assert_set_exception(TeledyneParameter2.BUFFERED_OUTPUT_PERIOD, "00:00:11")
-    #
-    # # Test for 5th beam
-    # def test_startup_params_slave(self):
-    #     """
-    #     Verify that startup parameters are applied correctly. Generally this
-    #     happens in the driver discovery method.
-    #
-    #     since nose orders the tests by ascii value this should run first.
-    #     """
-    #     self.assert_initialize_driver()
-    #
-    #     get_values = {
-    #         TeledyneParameter2.SERIAL_FLOW_CONTROL: '11110',
-    #         TeledyneParameter2.BANNER: False,
-    #         TeledyneParameter2.INSTRUMENT_ID: 0,
-    #         TeledyneParameter2.SLEEP_ENABLE: 0,
-    #         TeledyneParameter2.SAVE_NVRAM_TO_RECORDER: True,
-    #         TeledyneParameter2.POLLED_MODE: False,
-    #         TeledyneParameter2.XMIT_POWER: 255,
-    #         TeledyneParameter2.SPEED_OF_SOUND: 1485,
-    #         TeledyneParameter2.PITCH: 0,
-    #         TeledyneParameter2.ROLL: 0,
-    #         TeledyneParameter2.SALINITY: 35,
-    #         TeledyneParameter2.TIME_PER_ENSEMBLE: '00:00:00.00',
-    #         TeledyneParameter2.FALSE_TARGET_THRESHOLD: '050,001',
-    #         TeledyneParameter2.BANDWIDTH_CONTROL: 0,
-    #         TeledyneParameter2.CORRELATION_THRESHOLD: 64,
-    #         TeledyneParameter2.SERIAL_OUT_FW_SWITCHES: '111100000',
-    #         TeledyneParameter2.ERROR_VELOCITY_THRESHOLD: 2000,
-    #         TeledyneParameter2.CLIP_DATA_PAST_BOTTOM: False,
-    #         TeledyneParameter2.RECEIVER_GAIN_SELECT: 1,
-    #         TeledyneParameter2.PINGS_PER_ENSEMBLE: 1,
-    #         TeledyneParameter2.TRANSMIT_LENGTH: 0,
-    #         TeledyneParameter2.PING_WEIGHT: 0,
-    #         TeledyneParameter2.AMBIGUITY_VELOCITY: 175,
-    #         TeledyneParameter2.SERIAL_DATA_OUT: '000 000 000',
-    #         TeledyneParameter2.LATENCY_TRIGGER: False,
-    #         TeledyneParameter2.HEADING_ALIGNMENT: +00000,
-    #         TeledyneParameter2.HEADING_BIAS: +00000,
-    #         TeledyneParameter2.DATA_STREAM_SELECTION: 0,
-    #         TeledyneParameter2.ENSEMBLE_PER_BURST: 0,
-    #         TeledyneParameter2.SAMPLE_AMBIENT_SOUND: False,
-    #         TeledyneParameter2.BUFFERED_OUTPUT_PERIOD: '00:00:00'
-    #     }
-    #     new_set = {
-    #         'SERIAL_FLOW_CONTROL': '11110',
-    #         'BANNER': 1,
-    #         'SAVE_NVRAM_TO_RECORDER': True,  # Immutable.
-    #         'PITCH': 1,
-    #         'ROLL': 1
-    #     }
-    #     # Change the values of these parameters to something before the
-    #     # driver is reinitialized.  They should be blown away on reinit.
-    #     new_values = {}
-    #
-    #     p = TeledyneParameter2.dict()
-    #     for k, v in new_set.items():
-    #
-    #         if k not in ('BANNER', 'SERIAL_FLOW_CONTROL', 'SAVE_NVRAM_TO_RECORDER', 'TIME'):
-    #             new_values[p[k]] = v
-    #     self.assert_startup_parameters(self.assert_driver_parameters, new_values, get_values)
+        self.assert_set_exception(Parameter.CAMERA_GAIN, 50)
+        self.assert_set_exception(Parameter.CAMERA_MODE, 8)
+        self.assert_set_exception(Parameter.COMPRESSION_RATIO, 128)
+        self.assert_set_exception(Parameter.FOCUS_POSITION, 210)
+        self.assert_set_exception(Parameter.FOCUS_SPEED, 20)
+        self.assert_set_exception(Parameter.FRAME_RATE, 40)
+        self.assert_set_exception(Parameter.IMAGE_RESOLUTION, 3)
+        self.assert_set_exception(Parameter.IRIS_POSITION, 20)
+        self.assert_set_exception(Parameter.LAMP_BRIGHTNESS, '4:50')
+        self.assert_set_exception(Parameter.LAMP_BRIGHTNESS, '3:110')
+        self.assert_set_exception(Parameter.LAMP_BRIGHTNESS, '2:110')
+        self.assert_set_exception(Parameter.LAMP_BRIGHTNESS, '1:110')
+        #self.assert_set_exception(Parameter.PAN_POSITION, 90)
+        self.assert_set_exception(Parameter.PAN_SPEED, 110)
+        self.assert_set_exception(Parameter.SHUTTER_SPEED, 70000)
+        self.assert_set_exception(Parameter.SOFT_END_STOPS, 1)
+        self.assert_set_exception(Parameter.TILT_POSITION, 10)
+        self.assert_set_exception(Parameter.TILT_SPEED, 19)
+        self.assert_set_exception(Parameter.ZOOM_POSITION, "00:00:11")
+        self.assert_set_exception(Parameter.ZOOM_SPEED, "00:00:11")
 
 
 ###############################################################################
