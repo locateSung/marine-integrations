@@ -43,7 +43,7 @@ class DataParticleType(BaseEnum):
     Stream types of data particles
     """
     RAW = CommonDataParticleType.RAW
-    CAMDS_RESPONSE = "camds_response"
+    #CAMDS_RESPONSE = "camds_response"
     CAMDS_VIDEO = "camds_video"
     CAMDS_HEALTH_STATUS = "camds_health_status"
     CAMDS_DISK_STATUS = "camds_disc_status"

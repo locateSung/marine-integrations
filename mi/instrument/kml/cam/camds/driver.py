@@ -514,10 +514,10 @@ class CAMDSProtocol(KMLProtocol):
         parsed_sample = particle.generate()
         #parsed_sample._data_particle_type = DataParticleType.CAMDS_VIDEO
         if self._driver_event:
-            if(self.video_fowarding_flag):
+            if(self.video_forwarding_flag):
                 self._driver_event(DriverAsyncEvent.SAMPLE, parsed_sample)
 
-    def _got_chunk_stream(self, chunk, timestamp):
+    def _got_chunk_stream(self, chunk, timestamfp):
         """
         The base class got_data has gotten a chunk from the chunker.
         Pass it to extract_sample with the appropriate particle

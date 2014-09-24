@@ -359,17 +359,17 @@ class KMLParameter(DriverParameter):
     FOCUS_POSITION = ('FG', '<\x03:FP:>', 1, 1, '\x64', 'Focus Position', 'between 0 and 200', 'FOCUS_POSITION', 100)
 
     # Engineering parameters for the scheduled commands
-    SAMPLE_INTERVAL = (None, None, None, None, '00:00:00', 'Sample Interval',
-                       'hh:mm:ss, 00:00:00 will turn off the schedule','SAMPLE_INTERVAL', '00:30:00')
+    SAMPLE_INTERVAL = (None, None, None, None, '00:30:00', 'Sample Interval',
+                       'hh:mm:ss','SAMPLE_INTERVAL', '00:30:00')
     ACQUIRE_STATUS_INTERVAL = (None, None, None, None, '00:00:00', 'Acquire Status Interval',
-                               'hh:mm:ss, 00:00:00 will turn off the schedule', 'ACQUIRE_STATUS_INTERVAL', '00:00:00')
+                               'hh:mm:ss', 'ACQUIRE_STATUS_INTERVAL', '00:00:00')
     VIDEO_FORWARDING = (None, None, None, None, False, 'Video Forwarding Flag',
                         'True - Turn on Video, False - Turn off video', 'VIDEO_FORWARDING', False)
-    VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '00:00:00', 'video forwarding timeout',
-                                'hh:mm:ss, 00:00:00 means No timeout', 'VIDEO_FORWARDING_TIMEOUT', '01:00:00')
-    PRESET_NUMBER = (None, None, None, None, 1,'Preset number', 'preset number (1- 15)', 'PRESET_NUMBER', 1)
-    AUTO_CAPTURE_DURATION = (None, None, None, None, 3, 'Auto Capture Duration','1 to 5 Seconds',
-                             'AUTO_CAPTURE_DURATION', 3)
+    VIDEO_FORWARDING_TIMEOUT = (None, None, None, None, '01:00:00', 'video forwarding timeout',
+                                'hh:mm:ss', 'VIDEO_FORWARDING_TIMEOUT', '01:00:00')
+    PRESET_NUMBER = (None, None, None, None, 1, 'Preset number', 'preset number (1- 15)', 'PRESET_NUMBER', 1)
+    AUTO_CAPTURE_DURATION = (None, None, None, None, '00:00:03', 'Auto Capture Duration', 'hh:mm:ss, 1 to 5 Seconds',
+                             'AUTO_CAPTURE_DURATION', '00:00:03')
 
 class KMLParameter_display(DriverParameter):
     ACQUIRE_STATUS_INTERVAL =  KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]
@@ -1160,7 +1160,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
         status_interval = self._param_dict.get(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY])
         if status_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.ACQUIRE_STATUS_INTERVAL,
+            self.start_scheduled_job(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
                                      KMLScheduledJob.STATUS,
                                      KMLProtocolEvent.ACQUIRE_STATUS)
 
@@ -1169,7 +1169,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self.forwarding_time = self._param_dict.get(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY])
         if self.video_forwarding_flag == True:
             if self.forwarding_time != ZERO_TIME_INTERVAL:
-                self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
                                              KMLScheduledJob.VIDEO_FORWARDING,
                                              KMLProtocolEvent.STOP_FORWARD)
 
@@ -1181,6 +1181,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self.stop_scheduled_job(KMLScheduledJob.STOP_CAPTURE)
         self.stop_scheduled_job(KMLScheduledJob.STATUS)
         self.stop_scheduled_job(KMLScheduledJob.VIDEO_FORWARDING)
+        self.stop_scheduled_job(KMLScheduledJob.SAMPLE)
 
         pass
 
@@ -1236,10 +1237,10 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
         self._driver_event(DriverAsyncEvent.STATE_CHANGE)
 
         # start scheduled event for Sampling only if the interval is not "00:00:00
-        sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY])
-        if sample_interval != ZERO_TIME_INTERVAL:
-            self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY], KMLScheduledJob.SAMPLE,
-                                     KMLProtocolEvent.ACQUIRE_SAMPLE)
+        # sample_interval = self._param_dict.get(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY])
+        # if sample_interval != ZERO_TIME_INTERVAL:
+        #     self.start_scheduled_job(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY], KMLScheduledJob.SAMPLE,
+        #                              KMLProtocolEvent.ACQUIRE_SAMPLE)
 
 
     def _handler_autosample_exit(self, *args, **kwargs):
@@ -1362,6 +1363,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                     KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY])):
                 self._param_dict.set_value(KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY],
                                            params[KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]])
+                if params[KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]] == ZERO_TIME_INTERVAL:
+                    self.stop_scheduled_job( KMLScheduledJob.SAMPLE)
                 changed = True
 
         if KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY] in params:
@@ -1369,6 +1372,8 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                     KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY])):
                 self._param_dict.set_value(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY],
                                            params[KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]])
+                if params[KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]] == ZERO_TIME_INTERVAL:
+                    self.stop_scheduled_job( KMLScheduledJob.STATUS)
                 changed = True
 
         if KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY] in params:
@@ -1380,9 +1385,11 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
                 self.forwarding_time = params[KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]]
                 if self.video_forwarding_flag == True:
                     if self.forwarding_time != ZERO_TIME_INTERVAL:
-                        self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                        self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
                                                  KMLScheduledJob.VIDEO_FORWARDING,
                                                  KMLProtocolEvent.STOP_FORWARD)
+                if self.forwarding_time == ZERO_TIME_INTERVAL:
+                    self.stop_scheduled_job( KMLScheduledJob.VIDEO_FORWARDING)
                 changed = True
 
         if KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY] in params:
@@ -1394,7 +1401,7 @@ class KMLProtocol(CommandResponseInstrumentProtocol):
 
                 if self.video_forwarding_flag == True:
                     if self.forwarding_time != ZERO_TIME_INTERVAL:
-                        self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT,
+                        self.start_scheduled_job(KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY],
                                                  KMLScheduledJob.VIDEO_FORWARDING,
                                                  KMLProtocolEvent.STOP_FORWARD)
                 changed = True

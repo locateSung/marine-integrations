@@ -93,207 +93,133 @@ class KMLIntegrationTest(InstrumentDriverIntegrationTestCase):
     ###
     #   Test scheduled events
     ###
-    def assert_compass_calibration(self):
-        """
-        Verify a calibration particle was generated
-        """
-        raise NotImplementedException()
+    # def assert_compass_calibration(self):
+    #     """
+    #     Verify a calibration particle was generated
+    #     """
+    #     raise NotImplementedException()
+    #
+    # def assert_acquire_status(self):
+    #     """
+    #     Verify a status particle was generated
+    #     """
+    #     raise NotImplementedException()
 
-    def assert_acquire_status(self):
-        """
-        Verify a status particle was generated
-        """
-        raise NotImplementedException()
+    # def assert_clock_sync(self):
+    #     """
+    #     Verify the clock is set to at least the current date
+    #     """
+    #     dt = self.assert_get(KMLParameter.TIME)
+    #     lt = time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(time.mktime(time.localtime())))
+    #     self.assertTrue(lt[:13].upper() in dt.upper())
+    #
+    # def assert_acquire_status(self):
+    #     """
+    #     Assert that Acquire_status return the following ASYNC particles
+    #     """
+    #     self.assert_async_particle_generation(DataParticleType.ADCP_COMPASS_CALIBRATION, self.assert_calibration,
+    #                                           timeout=60)
+    #     self.assert_async_particle_generation(DataParticleType.ADCP_ANCILLARY_SYSTEM_DATA, self.assert_ancillary_data,
+    #                                           timeout=60)
+    #     self.assert_async_particle_generation(DataParticleType.ADCP_TRANSMIT_PATH, self.assert_transmit_data,
+    #                                           timeout=60)
+    #
+    # def assert_transmit_data(self, data_particle, verify_values=True):
+    #     """
+    #     Verify an adcpt ps0 data particle
+    #     @param data_particle: ADCP_PS0DataParticle data particle
+    #     @param verify_values: bool, should we verify parameter values
+    #     """
+    #     self.assert_data_particle_header(data_particle, DataParticleType.ADCP_TRANSMIT_PATH)
+    #
+    # def assert_ancillary_data(self, data_particle, verify_values=True):
+    #     """
+    #     Verify an adcp ps0 data particle
+    #     @param data_particle: ADCP_PS0DataParticle data particle
+    #     @param verify_values: bool, should we verify parameter values
+    #     """
+    #     self.assert_data_particle_header(data_particle, DataParticleType.ADCP_ANCILLARY_SYSTEM_DATA)
+    #
+    # def assert_calibration(self, data_particle, verify_values=True):
+    #     self.assert_data_particle_header(data_particle, DataParticleType.ADCP_COMPASS_CALIBRATION)
 
-    def assert_clock_sync(self):
-        """
-        Verify the clock is set to at least the current date
-        """
-        dt = self.assert_get(KMLParameter.TIME)
-        lt = time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(time.mktime(time.localtime())))
-        self.assertTrue(lt[:13].upper() in dt.upper())
 
-    def assert_acquire_status(self):
-        """
-        Assert that Acquire_status return the following ASYNC particles
-        """
-        self.assert_async_particle_generation(DataParticleType.ADCP_COMPASS_CALIBRATION, self.assert_calibration,
-                                              timeout=60)
-        self.assert_async_particle_generation(DataParticleType.ADCP_ANCILLARY_SYSTEM_DATA, self.assert_ancillary_data,
-                                              timeout=60)
-        self.assert_async_particle_generation(DataParticleType.ADCP_TRANSMIT_PATH, self.assert_transmit_data,
-                                              timeout=60)
 
-    def assert_transmit_data(self, data_particle, verify_values=True):
-        """
-        Verify an adcpt ps0 data particle
-        @param data_particle: ADCP_PS0DataParticle data particle
-        @param verify_values: bool, should we verify parameter values
-        """
-        self.assert_data_particle_header(data_particle, DataParticleType.ADCP_TRANSMIT_PATH)
-
-    def assert_ancillary_data(self, data_particle, verify_values=True):
-        """
-        Verify an adcp ps0 data particle
-        @param data_particle: ADCP_PS0DataParticle data particle
-        @param verify_values: bool, should we verify parameter values
-        """
-        self.assert_data_particle_header(data_particle, DataParticleType.ADCP_ANCILLARY_SYSTEM_DATA)
-
-    def assert_calibration(self, data_particle, verify_values=True):
-        self.assert_data_particle_header(data_particle, DataParticleType.ADCP_COMPASS_CALIBRATION)
-
-    def test_scheduled_interval_clock_sync_command(self):
-        """
-        Verify the scheduled clock sync is triggered and functions as expected
-        """
-        self.assert_initialize_driver()
-        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:10')
-        time.sleep(15)
-
-        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
-
-    def test_scheduled_interval_acquire_status_command(self):
-        """
-        Verify the scheduled clock sync is triggered and functions as expected
-        """
-        self.assert_initialize_driver()
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:04')
-        time.sleep(10)
-        self.assert_acquire_status()
-
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
-
-        failed = False
-        try:
-            self.assert_acquire_status()
-            failed = True
-        except AssertionError:
-            pass
-        self.assertFalse(failed)
-
-    @unittest.skip('It takes many hours for this test')
-    def test_scheduled_acquire_status_autosample(self):
-        """
-        Verify the scheduled acquire status is triggered and functions as expected
-        """
-
-        self.assert_initialize_driver()
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:04')
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.AUTOSAMPLE)
-        time.sleep(10)
-        self.assert_acquire_status()
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
-
-    @unittest.skip('It takes many hours for this test')
-    def test_scheduled_clock_sync_autosample(self):
-        """
-        Verify the scheduled clock sync is triggered and functions as expected
-        """
-
-        self.assert_initialize_driver()
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:04')
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.AUTOSAMPLE)
-        time.sleep(10)
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
-
-    @unittest.skip('It takes time')
-    def test_acquire_status(self):
-        """
-        Verify the acquire_status command is functional
-        """
-
-        self.assert_initialize_driver()
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS)
-        self.assert_acquire_status()
-
-    # This will be called by test_set_range()
-    def _tst_set_xmit_power(self):
-        ###
-        #   test get set of a variety of parameter ranges
-        ###
-
-        # XMIT_POWER:  -- Int 0-255
-        self.assert_set(KMLParameter.XMIT_POWER, 0)
-        self.assert_set(KMLParameter.XMIT_POWER, 128)
-        self.assert_set(KMLParameter.XMIT_POWER, 254)
-
-        self.assert_set_exception(KMLParameter.XMIT_POWER, "LEROY JENKINS")
-        self.assert_set_exception(KMLParameter.XMIT_POWER, 256)
-        self.assert_set_exception(KMLParameter.XMIT_POWER, -1)
-        self.assert_set_exception(KMLParameter.XMIT_POWER, 3.1415926)
-        #
-        # Reset to good value.
-        #
-        self.assert_set(KMLParameter.XMIT_POWER, self._driver_parameters[KMLParameter.XMIT_POWER][self.VALUE])
-
-    # This will be called by test_set_range()
-    def _tst_set_speed_of_sound(self):
-        ###
-        #   test get set of a variety of parameter ranges
-        ###
-
-        # SPEED_OF_SOUND:  -- Int 1485 (1400 - 1600)
-        self.assert_set(KMLParameter.SPEED_OF_SOUND, 1400)
-        self.assert_set(KMLParameter.SPEED_OF_SOUND, 1450)
-        self.assert_set(KMLParameter.SPEED_OF_SOUND, 1500)
-        self.assert_set(KMLParameter.SPEED_OF_SOUND, 1550)
-        self.assert_set(KMLParameter.SPEED_OF_SOUND, 1600)
-
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 0)
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 1399)
-
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 1601)
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, "LEROY JENKINS")
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, -256)
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, -1)
-        self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 3.1415926)
-
-        #
-        # Reset to good value.
-        #
-        self.assert_set(KMLParameter.SPEED_OF_SOUND,
-                        self._driver_parameters[KMLParameter.SPEED_OF_SOUND][self.VALUE])
-
-    # This will be called by test_set_range()
-    def _tst_set_salinity(self):
-        ###
-        #   test get set of a variety of parameter ranges
-        ###
-
-        # SALINITY:  -- Int (0 - 40)
-        self.assert_set(KMLParameter.SALINITY, 1)
-        self.assert_set(KMLParameter.SALINITY, 10)
-        self.assert_set(KMLParameter.SALINITY, 20)
-        self.assert_set(KMLParameter.SALINITY, 30)
-        self.assert_set(KMLParameter.SALINITY, 40)
-
-        self.assert_set_exception(KMLParameter.SALINITY, "LEROY JENKINS")
-
-        # AssertionError: Unexpected exception: ES no value match (40 != -1)
-        self.assert_set_exception(KMLParameter.SALINITY, -1)
-
-        # AssertionError: Unexpected exception: ES no value match (35 != 41)
-        self.assert_set_exception(KMLParameter.SALINITY, 41)
-
-        self.assert_set_exception(KMLParameter.SALINITY, 3.1415926)
-
-        #
-        # Reset to good value.
-        #
-        self.assert_set(KMLParameter.SALINITY, self._driver_parameters[KMLParameter.SALINITY][self.VALUE])
+    # # This will be called by test_set_range()
+    # def _tst_set_xmit_power(self):
+    #     ###
+    #     #   test get set of a variety of parameter ranges
+    #     ###
+    #
+    #     # XMIT_POWER:  -- Int 0-255
+    #     self.assert_set(KMLParameter.XMIT_POWER, 0)
+    #     self.assert_set(KMLParameter.XMIT_POWER, 128)
+    #     self.assert_set(KMLParameter.XMIT_POWER, 254)
+    #
+    #     self.assert_set_exception(KMLParameter.XMIT_POWER, "LEROY JENKINS")
+    #     self.assert_set_exception(KMLParameter.XMIT_POWER, 256)
+    #     self.assert_set_exception(KMLParameter.XMIT_POWER, -1)
+    #     self.assert_set_exception(KMLParameter.XMIT_POWER, 3.1415926)
+    #     #
+    #     # Reset to good value.
+    #     #
+    #     self.assert_set(KMLParameter.XMIT_POWER, self._driver_parameters[KMLParameter.XMIT_POWER][self.VALUE])
+    #
+    # # This will be called by test_set_range()
+    # def _tst_set_speed_of_sound(self):
+    #     ###
+    #     #   test get set of a variety of parameter ranges
+    #     ###
+    #
+    #     # SPEED_OF_SOUND:  -- Int 1485 (1400 - 1600)
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND, 1400)
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND, 1450)
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND, 1500)
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND, 1550)
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND, 1600)
+    #
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 0)
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 1399)
+    #
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 1601)
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, "LEROY JENKINS")
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, -256)
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, -1)
+    #     self.assert_set_exception(KMLParameter.SPEED_OF_SOUND, 3.1415926)
+    #
+    #     #
+    #     # Reset to good value.
+    #     #
+    #     self.assert_set(KMLParameter.SPEED_OF_SOUND,
+    #                     self._driver_parameters[KMLParameter.SPEED_OF_SOUND][self.VALUE])
+    #
+    # # This will be called by test_set_range()
+    # def _tst_set_salinity(self):
+    #     ###
+    #     #   test get set of a variety of parameter ranges
+    #     ###
+    #
+    #     # SALINITY:  -- Int (0 - 40)
+    #     self.assert_set(KMLParameter.SALINITY, 1)
+    #     self.assert_set(KMLParameter.SALINITY, 10)
+    #     self.assert_set(KMLParameter.SALINITY, 20)
+    #     self.assert_set(KMLParameter.SALINITY, 30)
+    #     self.assert_set(KMLParameter.SALINITY, 40)
+    #
+    #     self.assert_set_exception(KMLParameter.SALINITY, "LEROY JENKINS")
+    #
+    #     # AssertionError: Unexpected exception: ES no value match (40 != -1)
+    #     self.assert_set_exception(KMLParameter.SALINITY, -1)
+    #
+    #     # AssertionError: Unexpected exception: ES no value match (35 != 41)
+    #     self.assert_set_exception(KMLParameter.SALINITY, 41)
+    #
+    #     self.assert_set_exception(KMLParameter.SALINITY, 3.1415926)
+    #
+    #     #
+    #     # Reset to good value.
+    #     #
+    #     self.assert_set(KMLParameter.SALINITY, self._driver_parameters[KMLParameter.SALINITY][self.VALUE])
 
 
 ###############################################################################
