@@ -18,9 +18,7 @@ from nose.plugins.attrib import attr
 from mock import Mock
 from mi.core.instrument.chunker import StringChunker
 
-import unittest
 import time
-#from mi.instrument.teledyne.particles import ADCP_TRANSMIT_PATH_KEY, ADCP_ANCILLARY_SYSTEM_DATA_KEY
 
 from mi.core.log import get_logger
 
@@ -33,11 +31,6 @@ from mi.instrument.kml.cam.test.test_driver import CAMDriverPublicationTest
 from mi.instrument.kml.particles import DataParticleType, CAMDS_DISK_STATUS_KEY, CAMDS_HEALTH_STATUS_KEY, CAMDS_VIDEO,\
                                         CAMDS_VIDEO_KEY
 
-# from mi.instrument.teledyne.workhorse.test.test_data import RSN_SAMPLE_RAW_DATA, rsn_cali_raw_data_string
-# from mi.instrument.teledyne.workhorse.test.test_data import RSN_PS0_RAW_DATA
-# from mi.instrument.teledyne.workhorse.test.test_data import PT2_RAW_DATA
-# from mi.instrument.teledyne.workhorse.test.test_data import PT4_RAW_DATA
-
 from mi.idk.unit_test import DriverTestMixin
 
 from mi.idk.unit_test import DriverStartupConfigKey
@@ -48,16 +41,6 @@ from mi.instrument.kml.driver import KMLProtocolEvent
 from mi.instrument.kml.driver import KMLScheduledJob
 from mi.instrument.kml.driver import KMLCapability
 from mi.instrument.kml.cam.camds.driver import InstrumentCmds, ProtocolState, ProtocolEvent, Parameter, Capability
-                                                #KMLParameter_display
-
-# from mi.instrument.teledyne.particles import ADCP_PD0_PARSED_KEY
-# from mi.instrument.teledyne.particles import ADCP_SYSTEM_CONFIGURATION_KEY
-# from mi.instrument.teledyne.particles import ADCP_COMPASS_CALIBRATION_KEY
-
-from mi.instrument.kml.driver import KMLInstrumentDriver
-from mi.instrument.kml.driver import KMLProtocol
-
-from mi.instrument.kml.driver import KMLProtocolState
 from mi.core.instrument.instrument_driver import DriverConnectionState
 from mi.core.instrument.instrument_driver import DriverProtocolState
 from mi.core.instrument.port_agent_client import PortAgentClient
@@ -71,10 +54,6 @@ from mi.idk.unit_test import InstrumentDriverQualificationTestCase
 
 from mi.instrument.kml.driver import KMLProtocolState
 from mi.instrument.kml.driver import KMLProtocolEvent
-
-# from mi.instrument.teledyne.workhorse.vadcp.driver import TeledyneParameter2
-
-from mi.core.exceptions import InstrumentCommandException
 from mi.core.common import BaseEnum
 
 from pyon.core.exception import ResourceError
@@ -639,71 +618,6 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         self.port_agents = {}
         InstrumentDriverIntegrationTestCase.setUp(self)
 
-    # def create_botpt_comm_config(self, comm_config):
-    #     config = self.create_ethernet_comm_config(comm_config)
-    #     config['instrument_type'] = ConfigTypes.BOTPT
-    #     config['device_tx_port'] = comm_config.device_tx_port
-    #     config['device_rx_port'] = comm_config.device_rx_port
-    #     return config
-
-    # def init_port_agent(self):
-    #     """
-    #     @brief Launch the driver process and driver client.  This is used in the
-    #     integration and qualification tests.  The port agent abstracts the physical
-    #     interface with the instrument.
-    #     @return return the pid to the logger process
-    #     """
-    #     if self.port_agents:
-    #         log.error("Port agent already initialized")
-    #         return
-    #
-    #     config = self.port_agent_config()
-    #     log.debug("port agent config: %s", config)
-    #
-    #     port_agents = {}
-    #
-    #     if config['instrument_type'] != ConfigTypes.MULTI:
-    #         config = {'only one port agent here!': config}
-    #     for name, each in config.items():
-    #         if type(each) != dict:
-    #             continue
-    #         port_agent_host = each.get('device_addr')
-    #         if port_agent_host is not None:
-    #             port_agent = PortAgentProcess.launch_process(each, timeout=60, test_mode=True)
-    #             port = port_agent.get_data_port()
-    #             pid = port_agent.get_pid()
-    #             if port_agent_host == LOCALHOST:
-    #                 log.info('Started port agent pid %s listening at port %s' % (pid, port))
-    #             else:
-    #                 log.info("Connecting to port agent on host: %s, port: %s", port_agent_host, port)
-    #             port_agents[name] = port_agent
-    #
-    #     self.addCleanup(self.stop_port_agent)
-    #     self.port_agents = port_agents
-    #
-    # def stop_port_agent(self):
-    #     """
-    #     Stop the port agent.
-    #     """
-    #     if self.port_agents:
-    #         log.debug("found port agents, now stop them")
-    #         for agent in self.port_agents.values():
-    #             agent.stop()
-    #     self.port_agents = {}
-    #
-    # def port_agent_comm_config(self):
-    #     config = {}
-    #     for name, each in self.port_agents.items():
-    #         port = each.get_data_port()
-    #         cmd_port = each.get_command_port()
-    #
-    #         config[name] = {
-    #             'addr': each._config['port_agent_addr'],
-    #             'port': port,
-    #             'cmd_port': cmd_port
-    #         }
-    #     return config
-
     def assert_disk_status(self, data_particle, verify_values=True):
         """
         Verify an adcpt pT4 data particle
@@ -832,7 +746,6 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
         self.assert_driver_command(KMLProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
         self.assert_acquire_sample()
-
         self.assert_driver_command(KMLProtocolEvent.GOTO_PRESET)
         self.assert_driver_command(KMLProtocolEvent.SET_PRESET)
         self.assert_driver_command(KMLProtocolEvent.STOP_FORWARD)
@@ -856,7 +769,6 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
         self.assert_driver_command(KMLProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
         self.assert_acquire_sample()
-
         self.assert_driver_command(KMLProtocolEvent.GOTO_PRESET)
         self.assert_driver_command(KMLProtocolEvent.SET_PRESET)
         self.assert_driver_command(KMLProtocolEvent.STOP_FORWARD)
@@ -891,34 +803,31 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
         self.assert_initialize_driver()
         self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:04')
+        self.assert_set(KMLParameter.SAMPLE_INTERVAL, '00:00:04')
         self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE)
         self.assert_current_state(KMLProtocolState.AUTOSAMPLE)
         time.sleep(10)
-        self.assert_acquire_status()
+        self.assert_acquire_sample()
         self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE)
         self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.GET_STATUS_INTERVAL, '00:00:00')
+        self.assert_set(KMLParameter.SAMPLE_INTERVAL, '00:00:00')
         self.assert_current_state(KMLProtocolState.COMMAND)
 
-    @unittest.skip('It takes many hours for this test')
-    def test_scheduled_clock_sync_autosample(self):
+    def test_scheduled_capture(self):
         """
-        Verify the scheduled clock sync is triggered and functions as expected
+        Verify the scheduled acquire status is triggered and functions as expected
         """
 
         self.assert_initialize_driver()
         self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:04')
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.AUTOSAMPLE)
-        time.sleep(10)
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.CLOCK_SYNCH_INTERVAL, '00:00:00')
+        self.assert_set(KMLParameter.AUTO_CAPTURE_DURATION, '00:00:02')
+        self.assert_driver_command(KMLProtocolEvent.START_CAPTURE)
+        time.sleep(1)
+        self.assert_acquire_sample()
+        time.sleep(2)
         self.assert_current_state(KMLProtocolState.COMMAND)
 
-    @unittest.skip('It takes time')
+    #@unittest.skip('It takes time')
     def test_acquire_status(self):
         """
         Verify the acquire_status command is functional
@@ -995,17 +904,6 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
             }
         return config
 
-    def create_multi_comm_config(self, comm_config):
-        result = {}
-        for name, config in comm_config.configs.items():
-            if config.method() == ConfigTypes.ETHERNET:
-                result[name] = self.create_ethernet_comm_config(config)
-            elif config.method() == ConfigTypes.SERIAL:
-                result[name] = self.create_serial_comm_config(config)
-            elif config.method() == ConfigTypes.RSN:
-                result[name] = self.create_rsn_comm_config(config)
-        return result
-
     def init_instrument_agent_client(self):
 
         # Driver config
@@ -1049,12 +947,12 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         """
 
         self.assert_enter_command_mode()
-        self.assert_set_parameter(KMLParameter.SPEED_OF_SOUND, 1487)
+        self.assert_set_parameter(KMLParameter.CAMERA_GAIN, 9)
 
         # go into direct access, and muck up a setting.
         self.assert_direct_access_start_telnet(timeout=600)
 
-        self.tcp_client.send_data("%smaster::EC1488%s" % (NEWLINE, NEWLINE))
+        self.tcp_client.send_data("<\x03:GS:\x08>")
 
         self.tcp_client.expect(TeledynePrompt.COMMAND)
 
@@ -1063,7 +961,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         # verify the setting got restored.
         self.assert_enter_command_mode()
         # Direct access is true, it should be set before
-        self.assert_get_parameter(KMLParameter.SPEED_OF_SOUND, 1487)
+        self.assert_get_parameter(KMLParameter.CAMERA_GAIN, 9)
 
     # Direct access to slave
     def test_direct_access_telnet_mode_slave(self):
@@ -1073,12 +971,12 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         """
 
         self.assert_enter_command_mode()
-        self.assert_set_parameter(KMLParameter.SPEED_OF_SOUND, 1487)
+        self.assert_set_parameter(KMLParameter.CAMERA_MODE, 9)
 
         # go into direct access, and muck up a setting.
         self.assert_direct_access_start_telnet(timeout=600)
 
-        self.tcp_client.send_data("%sslave::EC1488%s" % (NEWLINE, NEWLINE))
+        self.tcp_client.send_data("<\x03:SV:\x0A>")
 
         self.tcp_client.expect(TeledynePrompt.COMMAND)
 
@@ -1087,30 +985,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         # verify the setting got restored.
         self.assert_enter_command_mode()
         # Direct access is true, it should be set before
-        self.assert_get_parameter(KMLParameter.SPEED_OF_SOUND, 1487)
-
-    def test_recover_from_TG(self):
-        """
-        @brief This test manually tests that the Instrument Driver properly supports direct access
-         to the physical instrument. (telnet mode)
-        """
-
-        self.assert_enter_command_mode()
-
-        # go into direct access, and muck up a setting.
-        self.assert_direct_access_start_telnet(timeout=600)
-        today_plus_1month = (dt.datetime.utcnow() + dt.timedelta(days=31)).strftime("%Y/%m/%d,%H:%m:%S")
-
-        self.tcp_client.send_data("%sTG%s%s" % (NEWLINE, today_plus_1month, NEWLINE))
-
-        self.tcp_client.expect(KMLPrompt.COMMAND)
-
-        self.assert_direct_access_stop_telnet()
-
-        # verify the setting got restored.
-        self.assert_enter_command_mode()
-
-        self.assert_get_parameter(KMLParameter.TIME_OF_FIRST_PING, '****/**/**,**:**:**')
+        self.assert_get_parameter(KMLParameter.CAMERA_MODE, 9)
 
 
 ###############################################################################
